@@ -207,24 +207,18 @@
         }
 
         /* ========================================================= */
-        /* === 修复的 Publications Section (Float 浮动环绕布局) === */
+        /* === 修复的 Publications Section (100% 完美的网格布局) === */
         /* ========================================================= */
         .publication-card {
+            display: flex;
+            flex-direction: column;
+            gap: 24px; /* 上下部分的间距 */
             background: var(--surface-color);
             padding: 35px;
             border-radius: 24px;
             box-shadow: var(--shadow-sm), var(--shadow-glass);
             border: 1px solid var(--border-light);
             transition: var(--transition);
-            /* 关键修改：移除 Flexbox，使用标准块级流 */
-            display: block; 
-        }
-
-        /* 清除浮动，防止高度塌陷 */
-        .publication-card::after {
-            content: "";
-            display: table;
-            clear: both;
         }
 
         .publication-card:hover {
@@ -233,12 +227,15 @@
             border-color: var(--border-focus);
         }
 
+        /* 第一行：包含图片和核心元数据 */
+        .pub-top-row {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
         .pub-image-wrapper {
-            /* 关键修改：图片左浮动，允许文字环绕 */
-            float: left;
-            width: 420px; 
-            margin-right: 35px;
-            margin-bottom: 15px; /* 让环绕到底部的文字留出间距 */
+            flex: 0 0 420px;
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-light);
@@ -253,6 +250,12 @@
             mix-blend-mode: multiply;
         }
 
+        .pub-meta {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
         .pub-title {
             font-size: 1.25rem;
             font-family: 'Poppins', sans-serif;
@@ -260,7 +263,6 @@
             color: var(--text-primary);
             margin-bottom: 12px;
             line-height: 1.4;
-            /* 标题顶部对齐图片 */
             margin-top: -4px; 
         }
 
@@ -283,13 +285,18 @@
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            align-self: flex-start;
         }
 
+        /* 第二行：摘要独占整个宽度 */
         .pub-abstract {
+            width: 100%;
             font-size: 0.95rem;
             color: var(--text-secondary);
             line-height: 1.7;
+            padding-top: 20px;
+            border-top: 1px dashed var(--border-light); /* 添加虚线分割，更具学术感 */
         }
 
         /* === Projects Section === */
@@ -550,11 +557,12 @@
                 position: relative;
                 top: 0;
             }
+            .pub-top-row {
+                flex-direction: column;
+            }
             .pub-image-wrapper {
-                float: none;
                 width: 100%;
-                margin-right: 0;
-                margin-bottom: 20px;
+                flex: none;
             }
             .projects-grid {
                 grid-template-columns: 1fr;
@@ -609,7 +617,7 @@
         </ul>
 
         <div class="sidebar-meta">
-            <img src="https://profile-counter.glitch.me/bytetitan-star/count.svg" alt="Visitor Count" class="visitor-badge">
+            <img src="https://visitor-badge.laobi.icu/badge?page_id=bytetitan-star.github.io" alt="Visitor Count" class="visitor-badge">
             
             <div class="last-updated">
                 <i class="fas fa-clock"></i> Last updated: 2026-04-21
@@ -630,16 +638,21 @@
             <h2>Publications</h2>
             
             <div class="publication-card">
-                <div class="pub-image-wrapper">
-                    <img src="./figures/2026IJCNN-pipeline.png" alt="IJCNN 2026 Pipeline">
+                <div class="pub-top-row">
+                    <div class="pub-image-wrapper">
+                        <img src="./figures/2026IJCNN-pipeline.png" alt="IJCNN 2026 Pipeline">
+                    </div>
+                    <div class="pub-meta">
+                        <div class="pub-title">
+                            Selection Aware Poisoning Boosting Clean Label Backdoor Attacks via Distribution Deviation and Projection Residual Metrics
+                        </div>
+                        <div class="pub-authors">
+                            <strong>Xin Wang</strong>, Liming Liu, Xu Han, Yuanbo Li, Jun Li, Lei Zhang
+                        </div>
+                        <div class="pub-venue">Accepted at IJCNN 2026</div>
+                    </div>
                 </div>
-                <div class="pub-title">
-                    Selection Aware Poisoning Boosting Clean Label Backdoor Attacks via Distribution Deviation and Projection Residual Metrics
-                </div>
-                <div class="pub-authors">
-                    <strong>Xin Wang</strong>, Liming Liu, Xu Han, Yuanbo Li, Jun Li, Lei Zhang
-                </div>
-                <div class="pub-venue">Accepted at IJCNN 2026</div>
+                
                 <div class="pub-abstract">
                     For clean-label backdoor attacks, we propose two training-free, auxiliary-data-free sample selection strategies: Distribution Deviation Metric (DDM) and Projection Residual Metric (PRM). They precisely identify high-risk samples from a global statistical perspective, significantly improve attack success rates across diverse datasets and architectures, and effectively evade existing defenses.
                 </div>
@@ -652,7 +665,7 @@
                 
                 <div class="project-card">
                     <div class="project-img-wrapper">
-                        <img src="./figures/paperDistriller.png" alt="PaperDistiller System">
+                        <img src="./figure/paperDistiller.png" alt="PaperDistiller System">
                     </div>
                     <div class="project-content">
                         <div class="project-header">
@@ -680,7 +693,7 @@
 
                 <div class="project-card">
                     <div class="project-img-wrapper">
-                        <img src="./figures/SoulMate.png" alt="SoulMate Application">
+                        <img src="./figure/SoulMate.png" alt="SoulMate Application">
                     </div>
                     <div class="project-content">
                         <div class="project-header">
