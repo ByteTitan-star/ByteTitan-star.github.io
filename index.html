@@ -1,300 +1,462 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>王欣 (Wang Xin) - 个人主页</title>
+    <title>Xin Wang | Personal Homepage</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* 基础全局排版 */
+        /* === CSS Variables for Theme === */
+        :root {
+            --bg-color: #F8FAFC;
+            --surface-color: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-tertiary: #94A3B8;
+            --accent-color: #3B82F6;
+            --accent-hover: #2563EB;
+            --border-light: rgba(0, 0, 0, 0.06);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* === Global Reset & Typography === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            background-color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        
+
+        h1, h2, h3, h4 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
         a {
-            color: #0366d6;
+            color: var(--accent-color);
             text-decoration: none;
+            transition: var(--transition);
         }
-        
+
         a:hover {
-            text-decoration: underline;
+            color: var(--accent-hover);
         }
 
-        h1, h2, h3 {
-            color: #24292e;
-            font-weight: 600;
-        }
-
-        /* 页面左右分栏布局 */
-        .container {
+        /* === Layout Grid === */
+        .page-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 30px;
             display: flex;
-            flex-direction: row;
             gap: 60px;
+            align-items: flex-start;
         }
 
-        /* ========== 左侧个人信息卡片 ========== */
+        /* === Sidebar (Left Profile Card) === */
         .sidebar {
-            flex: 0 0 260px; /* 固定宽度 */
-            display: flex;
-            flex-direction: column;
-            font-size: 0.95em;
+            flex: 0 0 300px;
+            background: var(--surface-color);
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            position: sticky;
+            top: 60px;
+        }
+
+        .profile-img-container {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 24px auto;
+            border-radius: 50%;
+            padding: 6px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .profile-img {
-            width: 200px;
-            height: 200px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 4px solid var(--surface-color);
         }
 
-        .sidebar h1 {
-            font-size: 1.5em;
-            margin: 10px 0 5px 0;
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
-        .sidebar .subtitle {
-            color: #586069;
-            margin-bottom: 15px;
-            font-size: 1em;
+        .sidebar-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
 
-        .motto {
-            margin-bottom: 25px;
-            font-style: italic;
-            color: #555;
+        .sidebar-header .title {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .contact-list {
             list-style: none;
-            padding: 0;
-            margin: 0;
+            border-top: 1px solid var(--border-light);
+            padding-top: 24px;
         }
 
         .contact-list li {
             display: flex;
             align-items: flex-start;
-            margin-bottom: 12px;
-            line-height: 1.4;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
         }
 
-        /* 图标固定宽度，保证文字对齐 */
         .contact-list i {
-            width: 20px;
-            color: #24292e;
-            margin-top: 3px;
-            margin-right: 8px;
-            text-align: center;
+            width: 24px;
+            color: var(--text-tertiary);
+            font-size: 1.1rem;
+            margin-top: 4px;
+            transition: var(--transition);
         }
 
-        .email-group {
+        .contact-list li:hover i {
+            color: var(--accent-color);
+        }
+
+        .contact-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* === Main Content Area (Right) === */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+
+        section h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        section h2::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--border-light), transparent);
+            margin-left: 20px;
+        }
+
+        .text-body {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+
+        /* === Publications Section === */
+        .publication-card {
+            display: flex;
+            gap: 30px;
+            background: var(--surface-color);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: var(--transition);
+        }
+
+        .publication-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-4px);
+        }
+
+        .pub-image-wrapper {
+            flex: 0 0 280px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+            background: #fcfcfc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pub-image-wrapper img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        .pub-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
         }
 
-        /* ========== 右侧主体内容 ========== */
-        .main-content {
-            flex: 1;
-            min-width: 0; /* 防止内容溢出撑破 flex */
-        }
-
-        section {
-            margin-bottom: 35px;
-        }
-
-        section h2 {
-            font-size: 1.3em;
-            border-bottom: 1px solid #eaecef;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* 列表通用样式 */
-        ul.custom-list {
-            padding-left: 20px;
-            margin-top: 10px;
-        }
-
-        ul.custom-list li {
-            margin-bottom: 8px;
-        }
-
-        /* --- 荣誉滑动窗口 (Carousel) --- */
-        .edu-block {
-            margin-bottom: 25px;
-        }
-        
-        .edu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 5px;
-        }
-
-        .edu-header h3 {
-            margin: 0;
-            font-size: 1.1em;
-        }
-
-        .edu-time {
-            color: #586069;
-            font-size: 0.9em;
-        }
-
-        .edu-major {
-            margin: 0 0 10px 0;
-            color: #555;
-            font-size: 0.95em;
-        }
-
-        .honors-carousel {
-            display: flex;
-            overflow-x: auto;
-            gap: 15px;
-            padding: 5px 2px 15px 2px;
-            scrollbar-width: thin; /* Firefox */
-        }
-        
-        /* 定制滚动条样式 */
-        .honors-carousel::-webkit-scrollbar {
-            height: 6px;
-        }
-        .honors-carousel::-webkit-scrollbar-thumb {
-            background-color: #d1d5da;
-            border-radius: 3px;
-        }
-
-        .honor-card {
-            min-width: 160px;
-            background: #f8f9fa;
-            border: 1px solid #e1e4e8;
-            border-radius: 6px;
-            padding: 12px;
-            text-align: center;
-            font-size: 0.9em;
-            font-weight: 500;
-            color: #24292e;
-            flex-shrink: 0; /* 防止卡片被压缩 */
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .honor-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-        }
-
-        /* --- 论文展示区 --- */
-        .publication {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
-
-        .pub-img {
-            width: 35%; /* 控制图片宽度 */
-            max-width: 250px;
-            border: 1px solid #e1e4e8;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .pub-info {
-            flex: 1;
-        }
-
         .pub-title {
+            font-size: 1.15rem;
+            font-family: 'Poppins', sans-serif;
             font-weight: 600;
-            font-size: 1.05em;
-            margin-bottom: 4px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.4;
         }
 
         .pub-authors {
-            color: #24292e;
-            font-size: 0.95em;
-            margin-bottom: 4px;
-        }
-
-        .pub-venue {
-            font-style: italic;
-            color: #0366d6;
-            font-size: 0.9em;
+            font-size: 0.95rem;
             margin-bottom: 8px;
         }
 
-        .pub-desc {
-            font-size: 0.9em;
-            color: #555;
-            line-height: 1.5;
+        .pub-authors strong {
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
-        /* 响应式适配：在手机上自动变成上下排版 */
-        @media (max-width: 768px) {
-            .container {
+        .pub-venue {
+            display: inline-block;
+            background: #eff6ff;
+            color: var(--accent-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            align-self: flex-start;
+        }
+
+        .pub-abstract {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* === Education Section === */
+        .edu-item {
+            position: relative;
+            padding-left: 24px;
+            margin-bottom: 30px;
+            border-left: 2px solid var(--border-light);
+        }
+
+        .edu-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--surface-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .edu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .edu-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .edu-date {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .edu-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        /* === Hobbies & Interests === */
+        .hobbies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .hobby-card {
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: var(--transition);
+        }
+
+        .hobby-card:hover {
+            box-shadow: var(--shadow-sm);
+            border-color: var(--accent-color);
+        }
+
+        .hobby-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #eff6ff;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .hobby-text {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* === Internships Section === */
+        .internship-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            background: var(--surface-color);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+            transition: var(--transition);
+        }
+
+        .internship-card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: contain;
+            border: 1px solid var(--border-light);
+            padding: 4px;
+        }
+
+        .internship-info {
+            flex: 1;
+        }
+
+        .internship-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .internship-meta {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .internship-date {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+        }
+
+        /* === Responsive Design === */
+        @media (max-width: 968px) {
+            .page-wrapper {
                 flex-direction: column;
+                padding: 40px 20px;
             }
             .sidebar {
                 flex: none;
                 width: 100%;
-                align-items: center;
-                text-align: center;
+                position: relative;
+                top: 0;
             }
-            .contact-list li {
-                justify-content: center;
-            }
-            .contact-list i {
-                margin-right: 5px;
-            }
-            .publication {
+            .publication-card {
                 flex-direction: column;
             }
-            .pub-img {
+            .pub-image-wrapper {
+                flex: none;
                 width: 100%;
-                max-width: 100%;
+            }
+            .edu-header {
+                flex-direction: column;
+            }
+            .internship-card {
+                flex-direction: column;
+                text-align: center;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="page-wrapper">
     <aside class="sidebar">
-        <img src="./figures/ProfilePicture.png" alt="Wang Xin" class="profile-img">
-        <h1>王欣 (Wang Xin)</h1>
-        <div class="subtitle">Capital Normal University</div>
+        <div class="profile-img-container">
+            <img src="./figures/ProfilePicture.png" alt="Xin Wang" class="profile-img">
+        </div>
         
-        <div class="motto">Let`s go!</div>
+        <div class="sidebar-header">
+            <h1>Xin Wang</h1>
+            <div class="title">Master's Student</div>
+            <div class="title" style="font-size: 0.85rem; margin-top: 2px;">Capital Normal University</div>
+        </div>
 
         <ul class="contact-list">
             <li>
                 <i class="fas fa-map-marker-alt"></i> 
-                <span>中国，北京，海淀<br>(Haidian, Beijing, China)</span>
+                <div class="contact-content">
+                    <span>Haidian, Beijing, China</span>
+                </div>
             </li>
             <li>
                 <i class="fas fa-envelope"></i> 
-                <div class="email-group">
+                <div class="contact-content">
                     <a href="mailto:wxcurry@163.com">wxcurry@163.com</a>
                     <a href="mailto:wxcurry223@gmail.com">wxcurry223@gmail.com</a>
                 </div>
             </li>
             <li>
                 <i class="fab fa-github"></i> 
-                <a href="https://github.com/ByteTitan-star" target="_blank">ByteTitan-star (CodeTitan)</a>
+                <div class="contact-content">
+                    <a href="https://github.com/ByteTitan-star" target="_blank">ByteTitan-star</a>
+                </div>
             </li>
             <li>
-                <i class="fas fa-graduation-cap"></i> 
-                <a href="#" target="_blank">Google Scholar</a>
+                <i class="fas fa-code"></i> 
+                <div class="contact-content">
+                    <a href="https://leetcode.cn/u/serene-i3oseese/" target="_blank">Coding (LeetCode)</a>
+                </div>
             </li>
         </ul>
     </aside>
@@ -302,84 +464,83 @@
     <main class="main-content">
         
         <section id="about">
-            <h2>📝 About Me</h2>
-            <p>我现在是一名研二在读硕士，就读于北京首都师范大学。此前，我于2024年从安徽阜阳师范大学信息工程学院获得学士学位。我的核心研究领域是<strong>模型安全 (Model Security)</strong>，主要聚焦于<strong>后门攻击 (Backdoor Attacks)</strong>。</p>
-        </section>
-
-        <section id="news">
-            <h2>🔥 News</h2>
-            <ul class="custom-list">
-                <li><strong>[2026.04]</strong> 💼 入职百图生科 (BioMap) 担任大模型应用实习生。</li>
-                <li><strong>[2026.xx]</strong> 🎉 我们的论文被 IJCNN 2026 接收！</li>
-            </ul>
-        </section>
-
-        <section id="education">
-            <h2>🎓 Education</h2>
-            
-            <div class="edu-block">
-                <div class="edu-header">
-                    <h3>首都师范大学 (Capital Normal University)</h3>
-                    <span class="edu-time">2024.09 - 2027.06</span>
-                </div>
-                <p class="edu-major">📍 北京 | 计算机技术，硕士在读</p>
-                <div class="honors-carousel">
-                    <div class="honor-card">🏆 奖学金一等奖</div>
-                    <div class="honor-card">🏆 优秀研究生</div>
-                    <div class="honor-card">🏆 科研标兵</div>
-                    </div>
-            </div>
-
-            <div class="edu-block">
-                <div class="edu-header">
-                    <h3>阜阳师范大学信息工程学院 (Fuyang Normal University Info Eng College)</h3>
-                    <span class="edu-time">2020.09 - 2024.06</span>
-                </div>
-                <p class="edu-major">📍 安徽 | 计算机科学与技术，学士</p>
-                <div class="honors-carousel">
-                    <div class="honor-card">🥇 三好学生标兵</div>
-                    <div class="honor-card">🎓 优秀毕业生</div>
-                    <div class="honor-card">💻 编程竞赛一等奖</div>
-                    <div class="honor-card">🏆 院级奖学金</div>
-                </div>
-            </div>
-        </section>
-
-        <section id="internships">
-            <h2>💼 Internships</h2>
-            <ul class="custom-list">
-                <li>
-                    <strong>大模型应用实习生 (LLM Application Intern)</strong><br>
-                    百图生科 (BioMap), 北京 | <em>2026.03 - 至今</em>
-                </li>
-            </ul>
+            <h2>About Me</h2>
+            <p class="text-body">
+                I am currently a second-year Master's student at Capital Normal University in Beijing. Prior to this, I received my Bachelor's degree from Fuyang Normal University Information Engineering College in 2024. My core research interests lie in <strong>Model Security</strong>, with a primary focus on defending against and evaluating <strong>Backdoor Attacks</strong>.
+            </p>
         </section>
 
         <section id="publications">
-            <h2>📄 Publications</h2>
+            <h2>Publications</h2>
             
-            <div class="publication">
-                <img src="./figures/2026IJCNN-pipeline.png" alt="IJCNN 2026 Pipeline" class="pub-img">
-                <div class="pub-info">
+            <div class="publication-card">
+                <div class="pub-image-wrapper">
+                    <img src="./figures/2026IJCNN-pipeline.png" alt="IJCNN 2026 Pipeline">
+                </div>
+                <div class="pub-content">
                     <div class="pub-title">
                         Selection Aware Poisoning Boosting Clean Label Backdoor Attacks via Distribution Deviation and Projection Residual Metrics
                     </div>
-                    <div class="pub-authors">Author A, <strong>Wang Xin</strong>, Author C</div>
-                    <div class="pub-venue">[Accepted at IJCNN 2026]</div>
-                    <div class="pub-desc">
+                    <div class="pub-authors">
+                        <strong>Xin Wang</strong>, Liming Liu, Xu Han, Yuanbo Li, Jun Li, Lei Zhang
+                    </div>
+                    <div class="pub-venue">Accepted at IJCNN 2026</div>
+                    <div class="pub-abstract">
                         For clean-label backdoor attacks, we propose two training-free, auxiliary-data-free sample selection strategies: Distribution Deviation Metric (DDM) and Projection Residual Metric (PRM). They precisely identify high-risk samples from a global statistical perspective, significantly improve attack success rates across diverse datasets and architectures, and effectively evade existing defenses.
                     </div>
                 </div>
             </div>
         </section>
 
+        <section id="education">
+            <h2>Education</h2>
+            
+            <div class="edu-item">
+                <div class="edu-header">
+                    <div class="edu-title">Capital Normal University</div>
+                    <div class="edu-date">Sep 2024 – Jun 2027</div>
+                </div>
+                <div class="edu-desc">M.Eng. in Computer Technology | Beijing, China</div>
+            </div>
+
+            <div class="edu-item">
+                <div class="edu-header">
+                    <div class="edu-title">Fuyang Normal University Info Eng College</div>
+                    <div class="edu-date">Sep 2020 – Jun 2024</div>
+                </div>
+                <div class="edu-desc">B.Eng. in Computer Science and Technology | Anhui, China</div>
+            </div>
+        </section>
+
         <section id="hobbies">
-            <h2>🎮 Hobbies and Interests</h2>
-            <ul class="custom-list">
-                <li>🎶 <strong>Game:</strong> I like FPS.</li>
-                <li>🏸 <strong>Sports:</strong> I like basketball.</li>
-                <li>📷 <strong>Photography.</strong></li>
-            </ul>
+            <h2>Hobbies & Interests</h2>
+            <div class="hobbies-grid">
+                <div class="hobby-card">
+                    <div class="hobby-icon"><i class="fas fa-gamepad"></i></div>
+                    <div class="hobby-text">Gaming (FPS)</div>
+                </div>
+                <div class="hobby-card">
+                    <div class="hobby-icon"><i class="fas fa-basketball-ball"></i></div>
+                    <div class="hobby-text">Basketball</div>
+                </div>
+                <div class="hobby-card">
+                    <div class="hobby-icon"><i class="fas fa-camera-retro"></i></div>
+                    <div class="hobby-text">Photography</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="internships">
+            <h2>Internships</h2>
+            
+            <div class="internship-card">
+                <img src="./figures/biomap.png" alt="BioMap Logo" class="company-logo">
+                <div class="internship-info">
+                    <div class="internship-title">LLM Application Intern</div>
+                    <div class="internship-meta">BioMap | Beijing, China</div>
+                </div>
+                <div class="internship-date">Mar 2026 – Present</div>
+            </div>
         </section>
 
     </main>
