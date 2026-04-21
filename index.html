@@ -22,9 +22,11 @@
             --accent-color: #3B82F6;
             --accent-hover: #2563EB;
             --border-light: rgba(0, 0, 0, 0.06);
+            --border-focus: rgba(59, 130, 246, 0.3);
             --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
             --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-glass: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -63,21 +65,21 @@
 
         /* === Layout Grid === */
         .page-wrapper {
-            max-width: 1200px;
+            max-width: 1350px; /* Expanded Width for better proportions */
             margin: 0 auto;
-            padding: 60px 30px;
+            padding: 60px 40px;
             display: flex;
-            gap: 60px;
+            gap: 70px;
             align-items: flex-start;
         }
 
         /* === Sidebar (Left Profile Card) === */
         .sidebar {
-            flex: 0 0 300px;
+            flex: 0 0 320px;
             background: var(--surface-color);
             border-radius: 24px;
             padding: 40px 30px;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-md), var(--shadow-glass);
             border: 1px solid var(--border-light);
             position: sticky;
             top: 60px;
@@ -107,7 +109,7 @@
         }
 
         .sidebar-header h1 {
-            font-size: 1.75rem;
+            font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 4px;
         }
@@ -128,14 +130,14 @@
             display: flex;
             align-items: flex-start;
             margin-bottom: 16px;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
 
         .contact-list i {
             width: 24px;
             color: var(--text-tertiary);
             font-size: 1.1rem;
-            margin-top: 4px;
+            margin-top: 5px;
             transition: var(--transition);
         }
 
@@ -155,13 +157,13 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 60px;
+            gap: 70px;
         }
 
         section h2 {
-            font-size: 1.75rem;
+            font-size: 1.8rem;
             font-weight: 600;
-            margin-bottom: 24px;
+            margin-bottom: 30px;
             display: flex;
             align-items: center;
         }
@@ -171,40 +173,40 @@
             flex: 1;
             height: 1px;
             background: linear-gradient(to right, var(--border-light), transparent);
-            margin-left: 20px;
+            margin-left: 24px;
         }
 
         .text-body {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             color: var(--text-secondary);
+            line-height: 1.8;
         }
 
-        /* === Publications Section === */
+        /* === Publications Section (Refined Layout) === */
         .publication-card {
             display: flex;
-            gap: 30px;
+            gap: 40px; /* Increased gap */
             background: var(--surface-color);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: var(--shadow-sm);
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-sm), var(--shadow-glass);
             border: 1px solid var(--border-light);
             transition: var(--transition);
+            align-items: flex-start;
         }
 
         .publication-card:hover {
             box-shadow: var(--shadow-hover);
             transform: translateY(-4px);
+            border-color: var(--border-focus);
         }
 
         .pub-image-wrapper {
-            flex: 0 0 280px;
+            flex: 0 0 400px; /* Much wider image container */
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-light);
-            background: #fcfcfc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: #FAFAFA;
         }
 
         .pub-image-wrapper img {
@@ -212,6 +214,7 @@
             height: auto;
             object-fit: contain;
             display: block;
+            mix-blend-mode: multiply; /* Makes white backgrounds transparent against the wrapper */
         }
 
         .pub-content {
@@ -221,72 +224,181 @@
         }
 
         .pub-title {
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             font-family: 'Poppins', sans-serif;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             line-height: 1.4;
         }
 
         .pub-authors {
-            font-size: 0.95rem;
-            margin-bottom: 8px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
         }
 
         .pub-authors strong {
             color: var(--text-primary);
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .pub-venue {
             display: inline-block;
             background: #eff6ff;
             color: var(--accent-color);
-            padding: 4px 12px;
+            padding: 6px 16px;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             align-self: flex-start;
         }
 
         .pub-abstract {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* === Projects Section (New Grid Layout) === */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+
+        .project-card {
+            background: var(--surface-color);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm), var(--shadow-glass);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-4px);
+            border-color: var(--border-focus);
+        }
+
+        .project-img-wrapper {
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border-light);
+            background: #FAFAFA;
+        }
+
+        .project-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .project-card:hover .project-img-wrapper img {
+            transform: scale(1.03);
+        }
+
+        .project-content {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .project-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn-github {
+            color: var(--text-primary);
+            background: var(--bg-color);
+            border: 1px solid var(--border-light);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-github:hover {
+            background: #111827;
+            color: #FFFFFF;
+            border-color: #111827;
+        }
+
+        .project-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
             line-height: 1.6;
+            flex: 1;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tech-tag {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 4px 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            color: var(--text-secondary);
         }
 
         /* === Education Section === */
         .edu-item {
             position: relative;
-            padding-left: 24px;
-            margin-bottom: 30px;
+            padding-left: 28px;
+            margin-bottom: 35px;
             border-left: 2px solid var(--border-light);
         }
 
         .edu-item::before {
             content: '';
             position: absolute;
-            left: -6px;
+            left: -7px;
             top: 6px;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             background: var(--surface-color);
-            border: 2px solid var(--accent-color);
+            border: 3px solid var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
         .edu-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .edu-title {
             font-family: 'Poppins', sans-serif;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 600;
             color: var(--text-primary);
         }
@@ -295,51 +407,14 @@
             font-size: 0.9rem;
             color: var(--text-tertiary);
             font-weight: 500;
+            background: var(--bg-color);
+            padding: 4px 10px;
+            border-radius: 20px;
         }
 
         .edu-desc {
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--text-secondary);
-        }
-
-        /* === Hobbies & Interests === */
-        .hobbies-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .hobby-card {
-            background: var(--surface-color);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            transition: var(--transition);
-        }
-
-        .hobby-card:hover {
-            box-shadow: var(--shadow-sm);
-            border-color: var(--accent-color);
-        }
-
-        .hobby-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: #eff6ff;
-            color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .hobby-text {
-            font-weight: 500;
-            color: var(--text-primary);
         }
 
         /* === Internships Section === */
@@ -349,22 +424,25 @@
             gap: 24px;
             background: var(--surface-color);
             padding: 24px;
-            border-radius: 16px;
+            border-radius: 20px;
             border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
             transition: var(--transition);
         }
 
         .internship-card:hover {
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-focus);
         }
 
         .company-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
             object-fit: contain;
             border: 1px solid var(--border-light);
-            padding: 4px;
+            padding: 6px;
+            background: var(--bg-color);
         }
 
         .internship-info {
@@ -374,26 +452,66 @@
         .internship-title {
             font-family: 'Poppins', sans-serif;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             color: var(--text-primary);
             margin-bottom: 4px;
         }
 
         .internship-meta {
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--text-secondary);
         }
 
         .internship-date {
             font-size: 0.9rem;
             color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        /* === Hobbies & Interests (Pill Layout) === */
+        .hobbies-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .hobby-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            background: var(--surface-color);
+            border: 1px solid var(--border-light);
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .hobby-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .hobby-pill i {
+            color: var(--text-tertiary);
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .hobby-pill:hover i {
+            color: var(--accent-color);
         }
 
         /* === Responsive Design === */
-        @media (max-width: 968px) {
+        @media (max-width: 1024px) {
             .page-wrapper {
                 flex-direction: column;
-                padding: 40px 20px;
+                padding: 40px 24px;
             }
             .sidebar {
                 flex: none;
@@ -408,12 +526,12 @@
                 flex: none;
                 width: 100%;
             }
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
             .edu-header {
                 flex-direction: column;
-            }
-            .internship-card {
-                flex-direction: column;
-                text-align: center;
+                gap: 8px;
             }
         }
     </style>
@@ -492,6 +610,65 @@
             </div>
         </section>
 
+        <section id="projects">
+            <h2>Personal Works</h2>
+            <div class="projects-grid">
+                
+                <div class="project-card">
+                    <div class="project-img-wrapper">
+                        <img src="./figures/paperDistiller.png" alt="PaperDistiller System">
+                    </div>
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-title">PaperDistiller</div>
+                            <a href="https://github.com/ByteTitan-star/Agent_PaperDistiller" target="_blank" class="btn-github">
+                                <i class="fab fa-github"></i> Source
+                            </a>
+                        </div>
+                        <div class="project-desc">
+                            An intelligent processing system designed for academic papers. It features an automated pipeline for PDF parsing, full-text translation, core abstract extraction, and novelty generation. Integrated with a Multi-Agent Collaboration mechanism, the system supports an immersive dual-screen workspace equipped with RAG-based Q&A.
+                        </div>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Vue3</span>
+                            <span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">RAG</span>
+                            <span class="tech-tag">LangGraph</span>
+                            <span class="tech-tag">ToT</span>
+                            <span class="tech-tag">Agent SKILL</span>
+                            <span class="tech-tag">SSE</span>
+                            <span class="tech-tag">ChromaDB</span>
+                            <span class="tech-tag">BM25</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-wrapper">
+                        <img src="./figures/SoulMate.png" alt="SoulMate Application">
+                    </div>
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-title">SoulMate</div>
+                            <a href="https://github.com/ByteTitan-star/Agent_SoulMate" target="_blank" class="btn-github">
+                                <i class="fab fa-github"></i> Source
+                            </a>
+                        </div>
+                        <div class="project-desc">
+                            A highly scalable, full-stack AI companion application. It supports User-Generated Content (UGC) for character creation, text-based interactions, and customized knowledge bases. By integrating base tool usage and private knowledge binding, it maximizes the realism and interactivity of virtual personas.
+                        </div>
+                        <div class="tech-stack">
+                            <span class="tech-tag">React 18</span>
+                            <span class="tech-tag">Django 4</span>
+                            <span class="tech-tag">LangChain</span>
+                            <span class="tech-tag">Agent</span>
+                            <span class="tech-tag">Milvus</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
         <section id="education">
             <h2>Education</h2>
             
@@ -512,24 +689,6 @@
             </div>
         </section>
 
-        <section id="hobbies">
-            <h2>Hobbies & Interests</h2>
-            <div class="hobbies-grid">
-                <div class="hobby-card">
-                    <div class="hobby-icon"><i class="fas fa-gamepad"></i></div>
-                    <div class="hobby-text">Gaming (FPS)</div>
-                </div>
-                <div class="hobby-card">
-                    <div class="hobby-icon"><i class="fas fa-basketball-ball"></i></div>
-                    <div class="hobby-text">Basketball</div>
-                </div>
-                <div class="hobby-card">
-                    <div class="hobby-icon"><i class="fas fa-camera-retro"></i></div>
-                    <div class="hobby-text">Photography</div>
-                </div>
-            </div>
-        </section>
-
         <section id="internships">
             <h2>Internships</h2>
             
@@ -540,6 +699,21 @@
                     <div class="internship-meta">BioMap | Beijing, China</div>
                 </div>
                 <div class="internship-date">Mar 2026 – Present</div>
+            </div>
+        </section>
+
+        <section id="hobbies">
+            <h2>Hobbies & Interests</h2>
+            <div class="hobbies-wrapper">
+                <div class="hobby-pill">
+                    <i class="fas fa-gamepad"></i> Gaming (FPS)
+                </div>
+                <div class="hobby-pill">
+                    <i class="fas fa-basketball-ball"></i> Basketball
+                </div>
+                <div class="hobby-pill">
+                    <i class="fas fa-camera-retro"></i> Photography
+                </div>
             </div>
         </section>
 
