@@ -8,11 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* === CSS Variables for Theme === */
         :root {
             --bg-color: #F8FAFC;
             --surface-color: #FFFFFF;
@@ -30,7 +28,6 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* === Global Reset & Typography === */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -63,7 +60,6 @@
             color: var(--accent-hover);
         }
 
-        /* === Layout Grid === */
         .page-wrapper {
             max-width: 1350px;
             margin: 0 auto;
@@ -73,7 +69,6 @@
             align-items: flex-start;
         }
 
-        /* === Sidebar (Left Profile Card) === */
         .sidebar {
             flex: 0 0 320px;
             background: var(--surface-color);
@@ -153,7 +148,6 @@
             gap: 4px;
         }
 
-        /* === Sidebar Footer (Counter & Date) === */
         .sidebar-meta {
             margin-top: 20px;
             padding-top: 24px;
@@ -166,6 +160,7 @@
 
         .visitor-badge {
             transition: var(--transition);
+            border-radius: 4px;
         }
         
         .visitor-badge:hover {
@@ -181,7 +176,6 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* === Main Content Area (Right) === */
         .main-content {
             flex: 1;
             min-width: 0;
@@ -212,17 +206,25 @@
             line-height: 1.8;
         }
 
-        /* === Publications Section === */
+        /* ========================================================= */
+        /* === 修复的 Publications Section (Float 浮动环绕布局) === */
+        /* ========================================================= */
         .publication-card {
-            display: flex;
-            gap: 40px;
             background: var(--surface-color);
             padding: 35px;
             border-radius: 24px;
             box-shadow: var(--shadow-sm), var(--shadow-glass);
             border: 1px solid var(--border-light);
             transition: var(--transition);
-            align-items: flex-start;
+            /* 关键修改：移除 Flexbox，使用标准块级流 */
+            display: block; 
+        }
+
+        /* 清除浮动，防止高度塌陷 */
+        .publication-card::after {
+            content: "";
+            display: table;
+            clear: both;
         }
 
         .publication-card:hover {
@@ -232,7 +234,11 @@
         }
 
         .pub-image-wrapper {
-            flex: 0 0 400px;
+            /* 关键修改：图片左浮动，允许文字环绕 */
+            float: left;
+            width: 420px; 
+            margin-right: 35px;
+            margin-bottom: 15px; /* 让环绕到底部的文字留出间距 */
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-light);
@@ -247,12 +253,6 @@
             mix-blend-mode: multiply;
         }
 
-        .pub-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
         .pub-title {
             font-size: 1.25rem;
             font-family: 'Poppins', sans-serif;
@@ -260,6 +260,8 @@
             color: var(--text-primary);
             margin-bottom: 12px;
             line-height: 1.4;
+            /* 标题顶部对齐图片 */
+            margin-top: -4px; 
         }
 
         .pub-authors {
@@ -282,7 +284,6 @@
             font-size: 0.85rem;
             font-weight: 600;
             margin-bottom: 20px;
-            align-self: flex-start;
         }
 
         .pub-abstract {
@@ -549,12 +550,11 @@
                 position: relative;
                 top: 0;
             }
-            .publication-card {
-                flex-direction: column;
-            }
             .pub-image-wrapper {
-                flex: none;
+                float: none;
                 width: 100%;
+                margin-right: 0;
+                margin-bottom: 20px;
             }
             .projects-grid {
                 grid-template-columns: 1fr;
@@ -609,7 +609,7 @@
         </ul>
 
         <div class="sidebar-meta">
-            <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fbytetitan-star.github.io&count_bg=%233B82F6&title_bg=%231E293B&icon=&icon_color=%23E7E7E7&title=Visits&edge_flat=true" alt="Visitor Count" class="visitor-badge">
+            <img src="https://profile-counter.glitch.me/bytetitan-star/count.svg" alt="Visitor Count" class="visitor-badge">
             
             <div class="last-updated">
                 <i class="fas fa-clock"></i> Last updated: 2026-04-21
@@ -633,17 +633,15 @@
                 <div class="pub-image-wrapper">
                     <img src="./figures/2026IJCNN-pipeline.png" alt="IJCNN 2026 Pipeline">
                 </div>
-                <div class="pub-content">
-                    <div class="pub-title">
-                        Selection Aware Poisoning Boosting Clean Label Backdoor Attacks via Distribution Deviation and Projection Residual Metrics
-                    </div>
-                    <div class="pub-authors">
-                        <strong>Xin Wang</strong>, Liming Liu, Xu Han, Yuanbo Li, Jun Li, Lei Zhang
-                    </div>
-                    <div class="pub-venue">Accepted at IJCNN 2026</div>
-                    <div class="pub-abstract">
-                        For clean-label backdoor attacks, we propose two training-free, auxiliary-data-free sample selection strategies: Distribution Deviation Metric (DDM) and Projection Residual Metric (PRM). They precisely identify high-risk samples from a global statistical perspective, significantly improve attack success rates across diverse datasets and architectures, and effectively evade existing defenses.
-                    </div>
+                <div class="pub-title">
+                    Selection Aware Poisoning Boosting Clean Label Backdoor Attacks via Distribution Deviation and Projection Residual Metrics
+                </div>
+                <div class="pub-authors">
+                    <strong>Xin Wang</strong>, Liming Liu, Xu Han, Yuanbo Li, Jun Li, Lei Zhang
+                </div>
+                <div class="pub-venue">Accepted at IJCNN 2026</div>
+                <div class="pub-abstract">
+                    For clean-label backdoor attacks, we propose two training-free, auxiliary-data-free sample selection strategies: Distribution Deviation Metric (DDM) and Projection Residual Metric (PRM). They precisely identify high-risk samples from a global statistical perspective, significantly improve attack success rates across diverse datasets and architectures, and effectively evade existing defenses.
                 </div>
             </div>
         </section>
