@@ -65,7 +65,7 @@
 
         /* === Layout Grid === */
         .page-wrapper {
-            max-width: 1350px; /* Expanded Width for better proportions */
+            max-width: 1350px;
             margin: 0 auto;
             padding: 60px 40px;
             display: flex;
@@ -83,6 +83,8 @@
             border: 1px solid var(--border-light);
             position: sticky;
             top: 60px;
+            display: flex;
+            flex-direction: column;
         }
 
         .profile-img-container {
@@ -151,6 +153,34 @@
             gap: 4px;
         }
 
+        /* === Sidebar Footer (Counter & Date) === */
+        .sidebar-meta {
+            margin-top: 20px;
+            padding-top: 24px;
+            border-top: 1px dashed var(--border-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .visitor-badge {
+            transition: var(--transition);
+        }
+        
+        .visitor-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .last-updated {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+
         /* === Main Content Area (Right) === */
         .main-content {
             flex: 1;
@@ -182,10 +212,10 @@
             line-height: 1.8;
         }
 
-        /* === Publications Section (Refined Layout) === */
+        /* === Publications Section === */
         .publication-card {
             display: flex;
-            gap: 40px; /* Increased gap */
+            gap: 40px;
             background: var(--surface-color);
             padding: 35px;
             border-radius: 24px;
@@ -202,7 +232,7 @@
         }
 
         .pub-image-wrapper {
-            flex: 0 0 400px; /* Much wider image container */
+            flex: 0 0 400px;
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-light);
@@ -214,7 +244,7 @@
             height: auto;
             object-fit: contain;
             display: block;
-            mix-blend-mode: multiply; /* Makes white backgrounds transparent against the wrapper */
+            mix-blend-mode: multiply;
         }
 
         .pub-content {
@@ -261,7 +291,7 @@
             line-height: 1.7;
         }
 
-        /* === Projects Section (New Grid Layout) === */
+        /* === Projects Section === */
         .projects-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -468,7 +498,7 @@
             font-weight: 500;
         }
 
-        /* === Hobbies & Interests (Pill Layout) === */
+        /* === Hobbies & Interests === */
         .hobbies-wrapper {
             display: flex;
             flex-wrap: wrap;
@@ -577,6 +607,14 @@
                 </div>
             </li>
         </ul>
+
+        <div class="sidebar-meta">
+            <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fbytetitan-star.github.io&count_bg=%233B82F6&title_bg=%231E293B&icon=&icon_color=%23E7E7E7&title=Visits&edge_flat=true" alt="Visitor Count" class="visitor-badge">
+            
+            <div class="last-updated">
+                <i class="fas fa-clock"></i> Last updated: 2026-04-21
+            </div>
+        </div>
     </aside>
 
     <main class="main-content">
@@ -616,7 +654,7 @@
                 
                 <div class="project-card">
                     <div class="project-img-wrapper">
-                        <img src="./figures/paperDistiller.png" alt="PaperDistiller System">
+                        <img src="./figures/paperDistriller.png" alt="PaperDistiller System">
                     </div>
                     <div class="project-content">
                         <div class="project-header">
