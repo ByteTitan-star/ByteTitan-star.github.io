@@ -697,82 +697,59 @@ Agent 高并发的核心思路就是**分层拦截、异步解耦、读写分离
 
 <!-- i18n:en -->
 
+# AI Agent High-Concurrency in Practice: Redis Rate Limiting, Queues, Caching, and High Availability
 
-# AI Agent High-Concurrency Practice: Redis Rate Limiting, Queues, Caching, and HA
+> AI Agents are shifting from toys to productivity tools—but the moment you ship one to production, high concurrency becomes the first roadblock. Users submit analysis jobs in bulk, call large models concurrently, and poll task progress in real time… a sudden traffic spike is enough to crush the database. Using the evolution of a real Agent project as the thread, this article digs into a full stack of solutions—**gateway rate limiting, Redis Streams async decoupling, cache high availability, distributed locks, and cluster disaster recovery**—with plenty of production-ready Python code so you can finally nail Agent concurrency.
 
-> Agents graduate from toys to productivity tools—then concurrency hits first. Burst uploads, parallel LLM calls, and progress polling can melt a naive DB. This article walks a real Agent evolution: **gateway limits, Redis Streams decoupling, cache defenses, distributed locks, and Sentinel HA**, with Python-oriented patterns you can ship.
+---
 
-## 1. The Real Pain
+## 1. Background: The Real Pain of Agent High Concurrency
 
-Imagine a document-analysis Agent: upload PDF → summarize → extract → report. Feature-simple, load-fragile. Synchronous LLM work on the request thread collapses under concurrent users.
+Suppose we run an “intelligent document analysis Agent” service: users upload PDFs and ask the Agent to generate summaries, extract key information, and output reports. The feature set is not complex, but problems show up as soon as it goes live:
 
-## 2. Architecture Outline
+- At 10 a.m., ops push a campaign link and 20,000 users submit documents at once.
+- Request volume hits 30,000 QPS, of which 30% are task submissions (writes) and 70% are progress queries (reads).
+- A single MySQL instance can only handle about 3,000 QPS and is immediately overwhelmed, cascading into a service avalanche.
 
-```mermaid
-flowchart TD
-    A[Client] --> B[API Gateway / Rate limit]
-    B --> C[FastAPI app]
-    C --> D[Redis Streams queue]
-    D --> E[Worker pool]
-    E --> F[LLM / tools]
-    C --> G[Redis cache]
-    C --> H[Postgres]
-    G --> H
-    I[Sentinel / replicas] -.-> G
-    I -.-> D
-```
+**Root cause**: the database is the most fragile link in the system—you must stop large volumes of traffic from hitting the DB directly. This is identical to classic backend concurrency problems; the “object” just happens to be Agent tasks. What we need is an architecture of **layered interception, async peak shaving, and read/write separation**.
 
-Split **accept work** from **do work**. The API enqueues; workers consume.
-
-## 3. Gateway Rate Limiting
-
-Protect with token bucket / sliding window (Redis). Return 429 early. Separate limits for anonymous vs authenticated, and for expensive endpoints (upload/analyze) vs cheap status polls.
-
-## 4. Redis Streams as the Async Backbone
-
-Use Streams (or equivalent) for durable task queues: consumer groups, ACK, pending entries, retry/DLQ. Persist task state (`queued → running → succeeded/failed`) so clients poll safely.
-
-Keep the Python snippets in the Chinese section as the canonical copy-paste code—only the surrounding explanation is localized here.
-
-## 5. Cache: Penetration, Breakdown, Avalanche
-
-- **Penetration**: missing keys hammer DB → bloom filter / cached nulls  
-- **Breakdown**: hot key expiry → mutex / logical expire  
-- **Avalanche**: many keys expire together → jitter TTLs  
-
-Cache task results and idempotent LLM responses carefully (key by content hash + model/version).
-
-## 6. Distributed Locks
-
-Serialize critical sections (e.g. “finalize report once”) with Redis locks + fencing tokens; always set TTL; prefer libraries that renew safely.
-
-## 7. High Availability
-
-Sentinel or managed Redis for failover; connection pools with timeouts; graceful worker shutdown (stop claiming new messages, finish in-flight). Multi-AZ for Postgres; backpressure when queue depth spikes.
-
-## 8. Closing
-
-High concurrency for Agents is systems work: **admit, queue, cache, lock, fail over**. Redis is often the hub—not because it is trendy, but because it can be the rate limiter, queue, cache, and lock service in one operable plane.
-
-> Mermaid labels above are English. All executable code blocks remain identical to the Chinese article for fidelity.
-
-<!-- en-code-sync -->
-
-## Appendix: Code & diagrams from the article
-
-The English narrative above is localized for the language toggle. The following fenced blocks are copied unchanged from the Chinese version so you can still copy-paste every command and snippet while reading in English.
+The overall approach looks like this:
 
 ```mermaid
 flowchart LR
-  A["客户端请求"] --> B["网关限流（令牌桶）"]
-  B --> C{"请求类型"}
-  C -->|读请求| D["Redis 缓存"]
-  D -->|未命中| E["MySQL"]
-  C -->|写请求/任务提交| F["Redis Streams 消息队列"]
-  F --> G["Worker 异步消费"]
-  G --> H["更新 DB 和缓存"]
-  H --> I["SSE/轮询通知用户"]
+  A["Client request"] --> B["Gateway rate limit (token bucket)"]
+  B --> C{"Request type"}
+  C -->|Read| D["Redis cache"]
+  D -->|Miss| E["MySQL"]
+  C -->|Write / task submit| F["Redis Streams queue"]
+  F --> G["Worker async consume"]
+  G --> H["Update DB and cache"]
+  H --> I["SSE / poll notify user"]
 ```
+
+Next we implement this layer by layer.
+
+---
+
+## 2. Layer One: Gateway Rate Limiting—Token Bucket from Principle to Code
+
+### 1. Why a token bucket instead of a leaky bucket or sliding window?
+
+- **Leaky bucket**: forces constant-rate processing and cannot absorb bursts. In Agent scenarios, users may flood in instantly—you need to allow some burst.
+- **Sliding window**: simple to implement, but boundary bursts are hard to control, and precision is weaker than a token bucket.
+- **Token bucket**: generates tokens at a constant rate; bucket capacity allows limited bursts while smoothing traffic. The best choice for gateway-level limiting.
+
+### 2. Token bucket core idea and Redis + Lua implementation
+
+A token bucket has two parts:
+
+- **Token bucket**: fixed max capacity (e.g. 1,000 tokens).
+- **Token generator**: pours tokens into the bucket at a fixed rate (e.g. 500 per second); discards when full.
+
+When a request hits the gateway, it must take one token from the bucket. If it gets one, it proceeds; otherwise it is degraded.
+
+**Production-grade implementation: Redis + Lua for atomicity**
+
 ```lua
 -- ratelimit.lua
 local key = KEYS[1]              -- 限流Key，如 "rate_limit:agent_api"
@@ -808,6 +785,9 @@ else
     return 0 -- 限流
 end
 ```
+
+**Python call example** (with redis-py):
+
 ```python
 import redis
 import time
@@ -824,36 +804,91 @@ def is_limited(key, capacity=1000, rate=500):
     result = lua_func(keys=[key], args=[capacity, rate, now, 1])
     return result == 0   # 0 表示限流
 ```
+
+In a real gateway layer (e.g. Nginx + OpenResty or a Python middleware), you can integrate the logic above directly.
+
+### 3. What to do after being limited? Three practical degradation strategies
+
+Not getting a token does not mean you should drop the request blindly—choose by business need:
+
+- **Reject with a message**: the gateway returns `429 Too Many Requests`; the frontend shows “System busy, please try again later.” Suitable for non-critical APIs.
+- **Enqueue in a priority queue**: serialize request context into a Redis ZSet, with score as priority. Idle Workers pull and execute, returning a “queued” status.
+- **Return stale cached data**: for query traffic, return the last cached result (with a longer logical TTL), trading freshness for availability.
+
+In Agent projects we usually combine them: **queue task-submit APIs + serve queries from cache or ask the client to retry**.
+
+---
+
+## 3. Layer Two: Message-Queue Async Decoupling—Why We Insist on Redis Streams
+
+### 1. The hard lessons of Redis List
+
+At first we used `LPUSH` / `RPOP` as a task queue:
+
 ```python
 # Producer
 r.lpush("task_queue", task_json)
 # Consumer
 task_json = r.rpop("task_queue")   # 消息立即被删除
 ```
+
+Then a serious incident: the Consumer `RPOP`’d a message and OOM-crashed before processing it—**the message vanished from the List, the task was lost, and user complaints poured in.**
+
+**Redis Streams** appeared and solved this cleanly.
+
+### 2. Three killer features of Redis Streams
+
+#### (1) Consumer groups with automatic load balancing
+
 ```python
 # 添加消息
 r.xadd("mystream", {"task": "report_123", "user_id": "456"})
 # 消费者组读取
 r.xreadgroup("mygroup", "consumer1", {"mystream": ">"}, count=1)
 ```
+
+- Multiple Workers join the same consumer group `mygroup`; Streams evenly distributes messages so **each message is consumed by only one Worker**.
+- Scale out by adding Workers—no code changes.
+
+#### (2) ACK + timeout reclaim with XCLAIM
+
+After a Worker reads a message from the Stream, the message is not deleted; it enters that consumer’s Pending list. After processing you must ACK explicitly:
+
 ```python
 r.xack("mystream", "mygroup", msg_id)
 ```
+
+If a Worker crashes, the message stays Pending. Healthy Workers can periodically scan Pending and claim timed-out messages:
+
 ```python
 # 查看 pending 列表
 pending = r.xpending("mystream", "mygroup")
 # 认领超过 60 秒未处理的消息
 r.xclaim("mystream", "mygroup", "consumer2", min_idle_time=60000, message_ids=[msg_id])
 ```
+
+That gives you **zero message loss**—far safer than List.
+
+#### (3) Persistence and replay
+
+Streams data lives in primary/replica Redis and survives restarts. New consumers can read historical messages from `0-0`, which helps backfill after failures.
+
+### 3. Full Python implementation of Agent task state flow
+
 ```mermaid
 stateDiagram-v2
-  [*] --> QUEUED: 任务提交
-  QUEUED --> PROCESSING: Worker 消费
-  PROCESSING --> COMPLETED: 成功
-  PROCESSING --> FAILED: 异常
+  [*] --> QUEUED: Task submitted
+  QUEUED --> PROCESSING: Worker consumes
+  PROCESSING --> COMPLETED: Success
+  PROCESSING --> FAILED: Exception
   COMPLETED --> [*]
   FAILED --> [*]
 ```
+
+Assume the Agent processes a document-analysis task. The full flow:
+
+**API service submits a task** (FastAPI example):
+
 ```python
 import uuid
 import redis
@@ -868,6 +903,9 @@ async def submit_task(file_url: str):
     r.hset(f"task:status:{task_id}", mapping={"status": "QUEUED"})
     return {"task_id": task_id}
 ```
+
+**Worker consumes tasks**:
+
 ```python
 import redis
 from redis.exceptions import ResponseError
@@ -913,22 +951,51 @@ while True:
         # 记录异常，继续循环
         print(f"Worker error: {e}")
 ```
+
+**Frontend status**: poll the Hash `task:status:{task_id}`, or push via SSE long-lived connections (mentioned later).
+
+### 4. Reads and writes must be separated
+
+The system has both upload/submit (writes) and status/history queries (reads). You must not shove every request into the message queue—query latency would be unacceptable. Therefore:
+
+- **Reads**: query Redis cache directly (task-status Hash, hot String data); rarely penetrate to the DB.
+- **Writes**: rate limit → Streams queue → Worker async processing.
+
+---
+
+## 4. Layer Three: Redis Cache—Absorbing 90% of Reads
+
+### 1. Read/write flow under Cache-Aside
+
 ```mermaid
 flowchart TD
-  subgraph Read["读流程"]
-    A["读请求"] --> B{"缓存命中?"}
-    B -->|是| C["返回缓存数据"]
-    B -->|否| D["查询数据库"]
-    D --> E["写入缓存"]
+  subgraph Read["Read path"]
+    A["Read request"] --> B{"Cache hit?"}
+    B -->|Yes| C["Return cached data"]
+    B -->|No| D["Query database"]
+    D --> E["Write cache"]
     E --> C
   end
-  subgraph Write["写流程"]
-    F["写请求"] --> G["更新数据库"]
-    G --> H["删除缓存"]
-    H --> I["返回"]
+  subgraph Write["Write path"]
+    F["Write request"] --> G["Update database"]
+    G --> H["Delete cache"]
+    H --> I["Return"]
   end
 ```
-```python
+
+“Delete cache after write” aims for eventual consistency and avoids dirty cache under concurrent writes. Updating the cache can overwrite with stale values, so **delete is the safer choice**.
+
+### 2. Deep solutions for the three classic cache problems
+
+#### (1) Cache penetration
+
+Attackers query non-existent data such as `taskId=-1`. Neither cache nor DB has it, so many requests punch through to the DB.
+
+**Python mitigations**:
+
+- **Bloom filter**: use `pybloom-live` or Redis `BF.RESERVE` (requires RedisBloom).
+
+  ```python
   from pybloom_live import BloomFilter
   bf = BloomFilter(capacity=1000000, error_rate=0.001)
   # 初始化：将所有已有 task_id 加入布隆
@@ -940,7 +1007,10 @@ flowchart TD
           return None   # 直接拒绝
       # 继续后续缓存/DB 查询...
   ```
-```python
+
+- **Cache nulls with short TTL**: for missing IDs, cache a `null` value with a 30-second expiry.
+
+  ```python
   data = r.get(f"task:{task_id}")
   if data == "NULL":
       return None
@@ -953,6 +1023,13 @@ flowchart TD
       return db_data
   return json.loads(data)
   ```
+
+#### (2) Cache breakdown (hot key expiry)
+
+A hot key expires and a flood of requests hits the DB at once.
+
+**Python — mutex load** (simple distributed lock with redis-py):
+
 ```python
 import redis
 import time
@@ -997,11 +1074,41 @@ def get_task_result(task_id: str):
         time.sleep(0.05)
         return get_task_result(task_id)  # 简单重试
 ```
-```python
+
+- **Logical expiry**: attach a logical TTL to the cached value. On read, if expired, return the stale data first, then asynchronously load from DB and refill the cache. Implement with `threading.Thread` or `asyncio`.
+
+#### (3) Cache avalanche
+
+Many keys expire together, or the Redis cluster goes down.
+
+- **Add jitter to TTL**:
+
+  ```python
   import random
   expire = 3600 + random.randint(0, 300)  # 3600~3900 秒
   r.setex(key, expire, value)
   ```
+
+- **Multi-level cache**: local `cachetools`/LRU + remote Redis so not every request hits Redis.
+- **Redis HA cluster** (next chapter): primary/replica + Sentinel so Redis itself stays up.
+
+### 3. Discovering hot data and never-expire handling
+
+For extremely hot Agent base config (model params, prompt templates), you can:
+
+- **Skip TTL** and let a background job (e.g. APScheduler) refresh the cache every 5 minutes.
+- Use `redis-cli --hotkeys` to find hot keys, combine with logical expiry so updates do not instantly break through.
+
+---
+
+## 5. Distributed Locks and Watchdog: Idempotency and Mutual Exclusion
+
+### 1. Why do Agents need distributed locks?
+
+In the queue, Streams consumer groups ensure one message goes to one consumer—but **manual retries, duplicate frontend submits, and scheduled compensation** can still run the same business action twice. For example, creating the same task record twice. You need a distributed lock for idempotency.
+
+### 2. Correct Redis distributed lock pattern (Python)
+
 ```python
 import uuid
 import redis
@@ -1028,6 +1135,13 @@ def release_lock(lock_name, lock_val):
     unlock = r.register_script(unlock_script)
     unlock(keys=[lock_key], args=[lock_val])
 ```
+
+You must check the value in Lua before deleting, so you do not unlock someone else’s lock.
+
+### 3. Watchdog mechanism (Python)
+
+If business work exceeds the lock TTL (e.g. 30 seconds), the lock auto-releases and another thread may acquire it. A watchdog renews the lease on a timer:
+
 ```python
 import threading
 
@@ -1077,6 +1191,23 @@ class RedisLockWithWatchdog:
         unlock = self.r.register_script(script)
         unlock(keys=[self.lock_key], args=[self.lock_val])
 ```
+
+For long Agent jobs (LLM inference longer than 30 seconds), this matters a lot. In production you can also use `python-redis-lock`, which already implements similar renewal.
+
+---
+
+## 6. Redis HA Cluster: Primary/Replica + Sentinel Explained
+
+### 1. Recommended topology: one primary, two replicas + three Sentinels
+
+Enough for small/medium Agent projects—data volume is modest; the focus is availability.
+
+- **Primary**: all writes.
+- **Replicas**: async replication; share reads. Load-balance with round-robin, weights (favor replicas), or nearest access.
+- **Sentinel cluster**: at least three instances for monitoring, notification, and automatic failover.
+
+### 2. Connecting from a Python client via Sentinel
+
 ```python
 from redis.sentinel import Sentinel
 
@@ -1092,15 +1223,47 @@ master.set("key", "value")
 # 读操作使用 slave
 value = slave.get("key")
 ```
+
+When the primary dies and Sentinels finish failover, `master_for` reconnects to the new primary—no app restart required.
+
+### 3. How Sentinels decide the primary is down
+
+- **Subjective down (SDOWN)**: each Sentinel PINGs the primary every second. If there is no valid reply within `down-after-milliseconds` (default 30s), it marks subjective down.
+- **Objective down (ODOWN)**: that Sentinel asks peers whether they also believe the primary is down. When votes ≥ `quorum` (usually `sentinel_count/2+1`, e.g. 2), the primary is objectively down and failover starts.
+
+### 4. Full failover process
+
+1. **Elect a new primary**
+
 ```mermaid
 flowchart TD
-  A["哨兵判定主节点主观下线 SDOWN"] --> B["达到 quorum 客观下线 ODOWN"]
-  B --> C["选举新主：优先级、偏移量、runid"]
-  C --> D["向新主发送 REPLICAOF NO ONE"]
-  D --> E["其他从节点复制新主"]
-  E --> F["通知客户端 +switch-master"]
+  A["Sentinel marks primary SDOWN"] --> B["Quorum reached → ODOWN"]
+  B --> C["Elect new primary: priority, offset, runid"]
+  C --> D["Send REPLICAOF NO ONE to new primary"]
+  D --> E["Other replicas replicate new primary"]
+  E --> F["Notify clients +switch-master"]
 ```
-```python
+
+**Election priority**: among replicas, Sentinels pick a new primary by:
+
+   - smallest `replica-priority` (lower = higher priority)
+   - largest replication offset (freshest data)
+   - lexicographically smallest `runid`
+
+2. **Switch**: Sentinel sends `REPLICAOF NO ONE` to the chosen replica, promoting it to primary.
+3. **Resync**: other replicas replicate the new primary.
+4. **Notify clients**: publish new primary info on Pub/Sub channel `+switch-master`; Python’s `Sentinel` client handles this automatically.
+
+The whole process usually finishes within about 10 seconds, greatly improving Redis availability.
+
+### 5. Three ways to handle primary/replica lag
+
+Async replication means brief inconsistency—reads from a replica may see stale data.
+
+- **Force read primary**: after a write, strongly consistent reads go to the primary.
+- **Delayed double-delete**: after a write, delete the cache again ~500 ms later so replicas have time to sync.
+
+  ```python
   import threading
   def update_and_delete_cache(task_id, new_data):
       r.delete(f"task:{task_id}")          # 第一次删除
@@ -1108,6 +1271,27 @@ flowchart TD
       # 延迟 0.5 秒第二次删除（异步）
       threading.Timer(0.5, lambda: r.delete(f"task:{task_id}")).start()
   ```
+
+- **Logical expiry compatibility**: allow temporary stale reads; async refresh ensures eventual consistency.
+
+---
+
+## 7. Final Approach to Cache–MySQL Consistency
+
+### 1. Why delete the cache instead of updating it?
+
+Updating the cache has concurrency hazards: two writes update the DB in order A→B, but if cache updates reverse to B→A, dirty data can stick forever. **Deleting the cache** is a stateless operation—the next read refills with the latest data.
+
+### 2. Hardening classic Cache-Aside
+
+#### (1) Delayed double-delete (primary/replica lag)
+
+Python example already given above—no need to repeat.
+
+#### (2) Subscribe to MySQL binlog and update cache asynchronously
+
+Use **Python-MySQL-Replication** or **Canal (Java) + Kafka** to listen for binlog changes, then delete/update Redis.
+
 ```python
 # 示例：使用 pymysqlreplication 监听 binlog
 from pymysqlreplication import BinLogStreamReader
@@ -1122,6 +1306,19 @@ for binlogevent in stream:
             r.delete(f"task:{row['values']['id']}")
         # ... 处理其他事件
 ```
+
+#### (3) Distributed transactions
+
+When strong consistency is mandatory, you can bring in Saga- or TCC-based frameworks (e.g. Seata for Python or a custom stack)—but the overhead is high and usually not recommended for high-speed cache paths.
+
+---
+
+## 8. Shipping Agent High Concurrency: End-to-End Python Skeleton
+
+Putting the pieces together, a FastAPI + Redis Agent concurrency skeleton looks like this.
+
+**API service (`main.py`)**:
+
 ```python
 import uuid
 import json
@@ -1193,6 +1390,9 @@ async def query_task(task_id: str):
         # 未获取锁，稍后重试或返回旧数据
         raise HTTPException(status_code=202, detail="数据加载中，请稍后")
 ```
+
+**Worker consumer (`worker.py`)**, deployable as multiple processes:
+
 ```python
 import redis
 from redis.exceptions import ResponseError
@@ -1231,3 +1431,20 @@ while True:
         print(f"Error: {e}")
         time.sleep(1)
 ```
+
+---
+
+## 9. Summary and Interview Focus
+
+The core idea of Agent high concurrency is **layered interception, async decoupling, read/write separation, and cache in front**. From gateway token buckets to message queues to cache and distributed locks, every component forms a sturdy funnel so only a tiny fraction of requests ever reach the database.
+
+**Common interview points:**
+
+- Token bucket principles; how to implement atomic rate limiting with Redis + Lua (Python calls).
+- Advantages of Redis Streams over List; how consumer groups and `XCLAIM` prevent message loss.
+- Solutions (and Python code) for cache penetration, breakdown, and avalanche.
+- Correct distributed-lock patterns; why Lua unlock is required; watchdog renewal.
+- Sentinel election flow; handling primary/replica lag (delayed double-delete, etc.).
+- Under Cache-Aside, why delete the cache instead of updating it.
+
+Master these and you will be comfortable whether you are shipping Python Agent projects or other high-concurrency systems. If this article helped, feel free to like, bookmark, and share so more developers see it. Questions welcome in the comments—let’s level up together.
