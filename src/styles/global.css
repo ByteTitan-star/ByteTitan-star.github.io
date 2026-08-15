@@ -1347,16 +1347,19 @@ body.lightbox-open { overflow: hidden; }
   max-width: none;
   object-fit: cover;
   background: #0b0e13;
-  opacity: 1;
+  opacity: 0;
   transform: scale(1.01);
   filter: saturate(.92) contrast(1.02);
-  transition: opacity .8s var(--ease-out), filter .8s var(--ease-out), transform 1.2s var(--ease-out);
+  transition: opacity .55s var(--ease-out), filter .8s var(--ease-out), transform 1.2s var(--ease-out);
   pointer-events: none;
 }
-.home-page.past-hero .site-motion-bg {
-  opacity: .24;
-  transform: scale(1.045);
-  filter: saturate(.68) contrast(.92) brightness(1.22) blur(1px);
+.site-motion-bg.is-ready {
+  opacity: 1;
+}
+.home-page.past-hero .site-motion-bg.is-ready {
+  opacity: .34;
+  transform: scale(1.018);
+  filter: saturate(.90) contrast(1.04) brightness(1.08);
 }
 
 .hero,
@@ -1681,7 +1684,7 @@ body.lightbox-open { overflow: hidden; }
   .home-page { --pad: 20px; }
   .home-page .section { padding-block: 48px; }
   .light-site { background: rgba(247,248,250,.92); }
-  .home-page.past-hero .site-motion-bg { opacity: .16; }
+  .home-page.past-hero .site-motion-bg.is-ready { opacity: .16; }
   .contact-section--compact { align-items: flex-start; flex-direction: column; gap: 24px; padding-block: 46px; }
   .platform-row { justify-content: flex-start; }
   .scroll-progress { right: 6px; }
@@ -1730,7 +1733,7 @@ body.lightbox-open { overflow: hidden; }
 }
 
 /* Keep the global video legible after the masthead without making it overpower text. */
-.home-page.past-hero .site-motion-bg {
+.home-page.past-hero .site-motion-bg.is-ready {
   opacity: .34;
   transform: scale(1.018);
   filter: saturate(.90) contrast(1.04) brightness(1.08);
@@ -2040,7 +2043,7 @@ body.lightbox-open { overflow: hidden; }
 
 @media (max-width: 809px) {
   .home-page .light-site { background: rgba(247,248,250,.86); }
-  .home-page.past-hero .site-motion-bg { opacity: .28; }
+  .home-page.past-hero .site-motion-bg.is-ready { opacity: .28; }
   .section-heading--carousel { align-items: center; }
   .home-page .works-stack.project-track {
     grid-auto-columns: minmax(0, 92%);

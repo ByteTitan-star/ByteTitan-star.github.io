@@ -1,5 +1,5 @@
 <div class="music-dock" data-music-player aria-label="Background music player">
-  <audio data-music-audio preload="metadata"></audio>
+  <audio data-music-audio preload="none"></audio>
   <button class="music-main" type="button" data-music-toggle aria-label="Play background music" title="Play / Pause">
     <span class="music-icon" data-music-icon aria-hidden="true">▶</span>
     <span class="music-meta">
@@ -233,10 +233,30 @@
       root.style.setProperty('--footer-clearance', `${Math.ceil(visibleFooter)}px`);
     };
 
+    const deferUntilBgReady = (fn) => {
+      const video = document.querySelector('.site-motion-bg');
+      if (!video) {
+        fn();
+        return;
+      }
+      let done = false;
+      const run = () => {
+        if (done) return;
+        done = true;
+        fn();
+      };
+      if (video.readyState >= 2) {
+        run();
+        return;
+      }
+      video.addEventListener('canplay', run, { once: true });
+      window.setTimeout(run, 3500);
+    };
+
     window.addEventListener('scroll', syncFooterClearance, { passive: true });
     window.addEventListener('resize', syncFooterClearance);
     window.addEventListener('site-language-change', updateUI);
     syncFooterClearance();
-    boot();
+    deferUntilBgReady(boot);
   })();
 </script>
