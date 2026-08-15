@@ -45,6 +45,23 @@ const displayDescriptionEn = descriptionEn ?? description;
     </aside>
   </div>
 
+  <div class="mermaid-lightbox" data-mermaid-lightbox aria-hidden="true">
+    <button class="mermaid-lightbox__backdrop" type="button" data-mermaid-lightbox-close aria-label="Close diagram"></button>
+    <div class="mermaid-lightbox__panel" role="dialog" aria-modal="true" aria-labelledby="mermaid-lightbox-title">
+      <div class="mermaid-lightbox__toolbar">
+        <div class="mermaid-lightbox__title" id="mermaid-lightbox-title" data-en="Diagram preview" data-zh="图表预览">Diagram preview</div>
+        <div class="mermaid-lightbox__actions">
+          <button type="button" class="mermaid-lightbox__btn" data-mermaid-zoom-out aria-label="Zoom out" title="Zoom out">−</button>
+          <span class="mermaid-lightbox__zoom" data-mermaid-zoom-label>100%</span>
+          <button type="button" class="mermaid-lightbox__btn" data-mermaid-zoom-in aria-label="Zoom in" title="Zoom in">+</button>
+          <button type="button" class="mermaid-lightbox__btn" data-mermaid-zoom-reset data-en="Reset" data-zh="重置">Reset</button>
+          <button type="button" class="mermaid-lightbox__btn mermaid-lightbox__btn--close" data-mermaid-lightbox-close data-en="Close" data-zh="关闭">Close</button>
+        </div>
+      </div>
+      <div class="mermaid-lightbox__stage" data-mermaid-lightbox-stage></div>
+    </div>
+  </div>
+
   <script>
     const isMermaidBlock = (pre: HTMLElement) => {
       const language = [
@@ -70,6 +87,149 @@ const displayDescriptionEn = descriptionEn ?? description;
       return mermaidApi;
     };
 
+    const t = (en: string, zh: string) =>
+      document.documentElement.dataset.lang === 'zh' ? zh : en;
+
+    const ensureZoomControls = (wrap: HTMLElement) => {
+      if (wrap.querySelector('[data-mermaid-expand]')) return;
+      const bar = document.createElement('div');
+      bar.className = 'mermaid-wrap__bar';
+      const expand = document.createElement('button');
+      expand.type = 'button';
+      expand.className = 'mermaid-wrap__expand';
+      expand.dataset.mermaidExpand = '1';
+      expand.dataset.en = 'Enlarge';
+      expand.dataset.zh = '放大查看';
+      expand.setAttribute('aria-label', t('Enlarge diagram', '放大查看图表'));
+      expand.textContent = t('Enlarge', '放大查看');
+      bar.appendChild(expand);
+      wrap.insertBefore(bar, wrap.firstChild);
+    };
+
+    const bindMermaidLightbox = () => {
+      const lightbox = document.querySelector('[data-mermaid-lightbox]');
+      const stage = document.querySelector('[data-mermaid-lightbox-stage]');
+      const zoomLabel = document.querySelector('[data-mermaid-zoom-label]');
+      if (!(lightbox instanceof HTMLElement) || !(stage instanceof HTMLElement)) return;
+
+      let scale = 1;
+      let sourceWrap: HTMLElement | null = null;
+
+      const applyZoomLabel = () => {
+        if (zoomLabel) zoomLabel.textContent = `${Math.round(scale * 100)}%`;
+      };
+
+      const paintStage = () => {
+        const svg = sourceWrap?.querySelector('.mermaid svg');
+        stage.innerHTML = '';
+        if (!(svg instanceof SVGElement)) return;
+
+        const clone = svg.cloneNode(true) as SVGElement;
+        clone.removeAttribute('width');
+        clone.removeAttribute('height');
+        clone.style.maxWidth = 'none';
+        clone.style.width = 'auto';
+        clone.style.height = 'auto';
+        clone.style.display = 'block';
+
+        const shell = document.createElement('div');
+        shell.className = 'mermaid-lightbox__scaler';
+        const inner = document.createElement('div');
+        inner.className = 'mermaid-lightbox__scaler-inner';
+        inner.style.transform = `scale(${scale})`;
+        inner.appendChild(clone);
+        shell.appendChild(inner);
+        stage.appendChild(shell);
+
+        // Expand scrollable area to match visual size after scale.
+        requestAnimationFrame(() => {
+          const natural = clone.getBoundingClientRect();
+          const w = natural.width / scale;
+          const h = natural.height / scale;
+          if (w > 0 && h > 0) {
+            shell.style.width = `${w * scale}px`;
+            shell.style.height = `${h * scale}px`;
+            inner.style.width = `${w}px`;
+            inner.style.height = `${h}px`;
+          }
+          applyZoomLabel();
+        });
+        applyZoomLabel();
+      };
+
+      const syncLightboxCopy = () => {
+        lightbox.querySelectorAll('[data-en][data-zh]').forEach((el) => {
+          const value =
+            document.documentElement.dataset.lang === 'zh'
+              ? el.getAttribute('data-zh')
+              : el.getAttribute('data-en');
+          if (value !== null) el.textContent = value;
+        });
+      };
+
+      const close = () => {
+        lightbox.classList.remove('is-open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('lightbox-open');
+        stage.innerHTML = '';
+        sourceWrap = null;
+        scale = 1;
+      };
+
+      const open = (wrap: HTMLElement) => {
+        sourceWrap = wrap;
+        scale = 1.25;
+        syncLightboxCopy();
+        paintStage();
+        lightbox.classList.add('is-open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('lightbox-open');
+        (lightbox.querySelector('[data-mermaid-lightbox-close].mermaid-lightbox__btn--close') as HTMLElement | null)?.focus();
+      };
+
+      const setScale = (next: number) => {
+        scale = Math.min(3, Math.max(0.5, next));
+        paintStage();
+      };
+
+      document.querySelector('[data-article-prose]')?.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const expand = target.closest('[data-mermaid-expand]');
+        if (expand) {
+          const wrap = expand.closest('.mermaid-wrap');
+          if (wrap instanceof HTMLElement) open(wrap);
+          return;
+        }
+        const svgHit = target.closest('.mermaid-wrap .mermaid svg');
+        if (svgHit) {
+          const wrap = svgHit.closest('.mermaid-wrap');
+          if (wrap instanceof HTMLElement) open(wrap);
+        }
+      });
+
+      lightbox.querySelectorAll('[data-mermaid-lightbox-close]').forEach((btn) => {
+        btn.addEventListener('click', close);
+      });
+      document.querySelector('[data-mermaid-zoom-in]')?.addEventListener('click', () => setScale(scale + 0.25));
+      document.querySelector('[data-mermaid-zoom-out]')?.addEventListener('click', () => setScale(scale - 0.25));
+      document.querySelector('[data-mermaid-zoom-reset]')?.addEventListener('click', () => setScale(1.25));
+
+      stage.addEventListener(
+        'wheel',
+        (event) => {
+          if (!lightbox.classList.contains('is-open')) return;
+          event.preventDefault();
+          setScale(scale + (event.deltaY < 0 ? 0.1 : -0.1));
+        },
+        { passive: false }
+      );
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && lightbox.classList.contains('is-open')) close();
+      });
+    };
+
     /** Turn every mermaid <pre> into a wrap that keeps source for lazy render. */
     const prepareMermaidBlocks = () => {
       const root = document.querySelector('[data-article-prose]');
@@ -85,7 +245,6 @@ const displayDescriptionEn = descriptionEn ?? description;
 
         const wrap = document.createElement('div');
         wrap.className = 'mermaid-wrap';
-        // Prefer a child <script> store so quotes/newlines stay intact
         const store = document.createElement('script');
         store.type = 'text/plain';
         store.className = 'mermaid-source';
@@ -94,6 +253,7 @@ const displayDescriptionEn = descriptionEn ?? description;
         graph.className = 'mermaid';
         wrap.appendChild(store);
         wrap.appendChild(graph);
+        ensureZoomControls(wrap);
         pre.replaceWith(wrap);
       });
     };
@@ -107,6 +267,7 @@ const displayDescriptionEn = descriptionEn ?? description;
 
       const mermaid = await getMermaid();
       for (const wrap of wraps) {
+        ensureZoomControls(wrap);
         const store = wrap.querySelector('.mermaid-source');
         const graph = wrap.querySelector('.mermaid');
         const source = store?.textContent?.trim() || '';
@@ -116,6 +277,7 @@ const displayDescriptionEn = descriptionEn ?? description;
         try {
           await mermaid.run({ nodes: [graph] });
           wrap.dataset.mermaidRendered = '1';
+          wrap.classList.add('is-ready');
         } catch {
           graph.textContent = source;
           wrap.dataset.mermaidError = '1';
@@ -129,6 +291,14 @@ const displayDescriptionEn = descriptionEn ?? description;
         const on = panel.getAttribute('data-lang-panel') === lang;
         (panel as HTMLElement).hidden = !on;
         panel.setAttribute('aria-hidden', String(!on));
+      });
+
+      document.querySelectorAll('.mermaid-wrap__expand[data-en][data-zh]').forEach((el) => {
+        const value = lang === 'zh' ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+        if (value !== null) {
+          el.textContent = value;
+          el.setAttribute('aria-label', lang === 'zh' ? '放大查看图表' : 'Enlarge diagram');
+        }
       });
 
       const tocCard = document.querySelector('[data-toc-card]');
@@ -153,6 +323,7 @@ const displayDescriptionEn = descriptionEn ?? description;
     };
 
     prepareMermaidBlocks();
+    bindMermaidLightbox();
     syncArticleLanguage()
       .catch(() => {})
       .finally(() => {
