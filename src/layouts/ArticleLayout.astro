@@ -38,7 +38,7 @@ const displayDescriptionEn = descriptionEn ?? description;
         {updatedDate && <span><span data-en="Updated" data-zh="更新">Updated</span> {fmt(updatedDate)}</span>}
       </div>
       {tags.length > 0 && <div class="article-tags">{tags.map((tag) => <span class="tech-tag">{tag}</span>)}</div>}
-      <div class="prose"><slot /></div>
+      <div class="prose" data-article-prose><slot /></div>
     </article>
 
     {visibleHeadings.length > 0 && (
@@ -48,6 +48,56 @@ const displayDescriptionEn = descriptionEn ?? description;
       </aside>
     )}
   </div>
+
+  <script>
+    const isMermaidBlock = (pre: HTMLElement) => {
+      const language = [
+        pre.getAttribute('data-language'),
+        pre.className,
+        pre.querySelector('code')?.className || ''
+      ].join(' ').toLowerCase();
+      return language.includes('mermaid');
+    };
+
+    const renderMermaid = async () => {
+      const root = document.querySelector('[data-article-prose]');
+      if (!root) return;
+
+      const blocks = Array.from(root.querySelectorAll('pre')).filter(
+        (pre): pre is HTMLElement => pre instanceof HTMLElement && isMermaidBlock(pre)
+      );
+      if (!blocks.length) return;
+
+      const mermaid = (await import('mermaid')).default;
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'neutral',
+        securityLevel: 'loose',
+        fontFamily: "Segoe UI, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+      });
+
+      const targets: HTMLElement[] = [];
+      blocks.forEach((pre) => {
+        const source = pre.textContent?.trim();
+        if (!source) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'mermaid-wrap';
+        const graph = document.createElement('div');
+        graph.className = 'mermaid';
+        graph.textContent = source;
+        wrap.appendChild(graph);
+        pre.replaceWith(wrap);
+        targets.push(graph);
+      });
+
+      if (targets.length) {
+        await mermaid.run({ nodes: targets });
+      }
+    };
+
+    renderMermaid().catch(() => {});
+  </script>
 
   <script is:inline>
     (() => {

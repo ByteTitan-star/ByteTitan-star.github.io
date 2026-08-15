@@ -6,10 +6,10 @@ export default defineConfig({
   integrations: [mdx()],
   markdown: {
     shikiConfig: {
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark'
-      }
+      // Match the dark code-block chrome in global.css.
+      // Dual light/dark themes previously painted github-light text onto a near-black pre.
+      theme: 'github-dark',
+      wrap: false
     }
   }
 });
