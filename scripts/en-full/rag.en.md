@@ -85,9 +85,9 @@ Practical strategies:
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=512,        # 每个 Chunk 最大 Token 数
-    chunk_overlap=50,      # 重叠 Token 数，保持上下文连续
-    separators=["\n\n", "\n", "。", ".", " "],  # 优先按语义边界切分
+    chunk_size=512,        # max tokens per chunk
+    chunk_overlap=50,      # overlap tokens to keep context continuity
+    separators=["\n\n", "\n", "。", ".", " "],  # prefer semantic boundaries (incl. Chinese period)
 )
 chunks = text_splitter.split_text(document)
 ```
@@ -153,16 +153,16 @@ Single vector recall misses things. The common pattern is **multi-path recall + 
 
 ```python
 def multi_stage_recall(query, top_k=10):
-    # 1. 向量召回
+    # 1. Vector recall
     vec_results = vector_db.search(query, top_k=top_k)
 
-    # 2. BM25 关键词召回
+    # 2. BM25 keyword recall
     bm25_results = bm25_index.search(query, top_k=top_k)
 
-    # 3. 合并结果并去重
+    # 3. Merge and deduplicate
     all_results = merge_and_deduplicate(vec_results, bm25_results)
 
-    # 4. 重排序 Reranker 重新打分
+    # 4. Rerank with a reranker
     reranked = reranker.rerank(query, all_results, top_k=5)
     return reranked
 ```
@@ -192,7 +192,7 @@ When merging paths, **RRF (Reciprocal Rank Fusion)** is simple and effective—r
 ```python
 def rrf(results_lists, k=60):
     """
-    results_lists: 多个召回通道的结果列表，每个列表按相关性降序排列
+    results_lists: ranked result lists from multiple recall channels (best first)
     """
     scores = {}
     for rank_list in results_lists:
@@ -210,19 +210,19 @@ def rrf(results_lists, k=60):
 Generation quality lives in the prompt. A solid RAG prompt usually includes:
 
 ```text
-你是一个基于给定资料回答问题的助手。你必须严格依据以下参考资料回答。
-如果资料中没有答案，请直接说“我不知道”，不要自行编造。
+You are an assistant that answers only from the provided reference material.
+If the material does not contain the answer, say "I don't know" — do not invent.
 
-参考资料：
+Reference material:
 {retrieved_context}
 
-用户问题：{query}
+User question: {query}
 
-回答要求：
-1. 优先从参考资料中提取信息
-2. 如果参考资料中存在矛盾，请指出并说明
-3. 引用来源时标注 [来源：文档名]
-4. 如果信息不完整，明确说明缺失了什么
+Answer requirements:
+1. Prefer extracting facts from the references
+2. If references conflict, call that out
+3. Cite sources as [Source: document name]
+4. If information is incomplete, state what is missing
 ```
 
 Key techniques:
@@ -245,14 +245,14 @@ RAG reduces hallucination but still needs defense in depth:
 from ragas.metrics import faithfulness
 from ragas import evaluate
 
-# 生成答案后自动评估忠实度
+# Auto-evaluate faithfulness after generation
 faithfulness_score = evaluate(
     dataset,
     metrics=[faithfulness]
 )
-# 如果分数低于阈值，降级为"根据现有资料无法可靠回答"
+# If below threshold, degrade to an unreliable-answer response
 if faithfulness_score < 0.7:
-    return "根据当前资料，我无法给出可靠的答案，建议人工确认。"
+    return "Based on the current material, I cannot give a reliable answer. Please confirm with a human."
 ```
 
 ### 4.3 The context-window sweet spot
@@ -276,14 +276,14 @@ from typing import Optional
 from pydantic import BaseModel
 
 class SearchQuery(BaseModel):
-    query_text: str           # 语义检索文本
-    author: Optional[str]     # 过滤条件：作者
-    date_range: Optional[str] # 过滤条件：时间范围
-    category: Optional[str]   # 过滤条件：分类
+    query_text: str           # semantic search text
+    author: Optional[str]     # filter: author
+    date_range: Optional[str] # filter: time range
+    category: Optional[str]   # filter: category
 
-# 用 LLM 将用户输入解析为结构化的 SearchQuery
-# 例如用户输入："2024年关于Transformer的论文"
-# 解析结果：query_text="Transformer 论文", date_range="2024"
+# Use an LLM to parse user input into a structured SearchQuery
+# e.g. user: "Transformer papers from 2024"
+# -> query_text="Transformer papers", date_range="2024"
 ```
 
 ### 5.2 Multimodal RAG
@@ -301,16 +301,16 @@ Raw user questions are often vague, colloquial, or full of pronouns. Rewrite int
 ```python
 def rewrite_query(original_query: str, conversation_history: list = None) -> str:
     """
-    使用 LLM 改写用户问题，补全指代、规范化表述
+    Rewrite the user question with an LLM — resolve pronouns and normalize phrasing
     """
     prompt = f"""
-    请将以下用户问题改写为更清晰、关键词明确的检索查询。
-    保留所有关键实体和条件，补全可能缺失的指代信息。
+    Rewrite the user question into a clearer retrieval query with explicit keywords.
+    Keep all key entities and constraints; fill in missing referents when possible.
 
-    原始问题：{original_query}
-    对话历史：{conversation_history}
+    Original question: {original_query}
+    Conversation history: {conversation_history}
 
-    只输出改写后的查询文本：
+    Output only the rewritten query text:
     """
     return llm.generate(prompt)
 ```

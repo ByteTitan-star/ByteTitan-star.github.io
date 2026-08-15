@@ -452,9 +452,9 @@ Then start and enable the service:
 Open a terminal (CMD/PowerShell on Windows; system terminal on Mac/Linux) and run:
 
 ```bash
-# 查看Docker版本，输出版本号说明安装成功
+# Check Docker version — a version string means install succeeded
 docker --version
-# 查看Docker详细信息，确认服务正常运行
+# Inspect Docker details and confirm the daemon is healthy
 docker info
 ```
 
@@ -557,26 +557,26 @@ Beginner images often hit multiple GB because build toolchains ship into runtime
 Vue frontend example you can reuse:
 
 ```bash
-# 构建阶段：用完整的node镜像，安装依赖、打包项目
+# Build stage: full Node image — install deps and build the project
 FROM node:18-alpine AS builder
-# 设置工作目录
+# Set working directory
 WORKDIR /app
-# 先复制package.json，利用Docker分层缓存，依赖不变就不会重新安装
+# Copy package.json first to leverage layer cache when deps are unchanged
 COPY package*.json ./
-# 安装依赖
+# Install dependencies
 RUN npm install
-# 复制所有项目代码
+# Copy the rest of the project
 COPY . .
-# 执行打包命令，生成dist产物目录
+# Build artifacts into dist/
 RUN npm run build
 
-# 运行阶段：用轻量的nginx镜像，只保留打包后的产物
+# Runtime stage: lightweight nginx — keep only build output
 FROM nginx:1.25-alpine
-# 把构建阶段打包好的dist产物，复制到nginx的静态资源目录
+# Copy dist from the builder into nginx's static root
 COPY --from=builder /app/dist /usr/share/nginx/html
-# 声明80端口
+# Declare port 80
 EXPOSE 80
-# 启动nginx
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
@@ -620,9 +620,9 @@ Docker-managed storage, officially recommended. Lifecycle is decoupled from the 
 * **Example**: persist MySQL data:
 
 ```bash
-    # 创建一个名为mysql-data的Volume
+    # Create a volume named mysql-data
     docker volume create mysql-data
-    # 运行MySQL容器，把数据目录挂载到Volume
+    # Run MySQL and mount the data directory to the volume
     docker run -d --name mysql-demo -p 3306:3306 -v mysql-data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 mysql:8.0
 ```
 
@@ -637,11 +637,11 @@ Focus on the three modes you actually use:
 1. **bridge (default)** — Docker creates a default `bridge` network; unspecified containers join it. Peers on the **same** bridge can reach each other by container name/ID; different networks stay isolated. ✅ Best practice: in production, create a **custom** bridge for better isolation and DNS. Example:
 
 ```bash
-    # 1. 创建一个自定义的桥接网络
+    # 1. Create a custom bridge network
     docker network create my-net
-    # 2. 运行MySQL容器，加入my-net网络
+    # 2. Run MySQL on my-net
     docker run -d --name mysql-demo --network my-net -e MYSQL_ROOT_PASSWORD=123456 mysql:8.0
-    # 3. 运行后端应用容器，加入同一个网络，直接用容器名mysql-demo访问数据库
+    # 3. Run the backend on the same network — reach MySQL by container name mysql-demo
     docker run -d --name backend-demo --network my-net my-backend:v1
 ```
 
@@ -659,14 +659,14 @@ Create a blog directory with `index.html`:
 
 ```html
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>我的个人博客</title>
+    <title>My Personal Blog</title>
 </head>
 <body>
-    <h1>欢迎来到我的个人博客</h1>
-    <p>这是用Docker部署的静态博客</p>
+    <h1>Welcome to My Personal Blog</h1>
+    <p>This is a static blog deployed with Docker</p>
 </body>
 </html>
 ```
@@ -676,13 +676,13 @@ Create a blog directory with `index.html`:
 At the project root:
 
 ```bash
-# 基础镜像用轻量的nginx alpine版本
+# Lightweight nginx alpine as the base image
 FROM nginx:1.25-alpine
-# 把本地的html文件复制到nginx的静态资源目录
+# Copy local HTML into nginx's static root
 COPY ./index.html /usr/share/nginx/html/index.html
-# 声明80端口
+# Declare port 80
 EXPOSE 80
-# 前台启动nginx
+# Run nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"]
 ```
 

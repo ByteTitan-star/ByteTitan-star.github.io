@@ -158,19 +158,20 @@ client = OpenAI()
 
 def generate_qa_pairs(documents: list[str], num_pairs: int = 10) -> list[dict]:
     """
-    基于文档内容，使用 LLM 自动生成 QA 对。
+    Auto-generate QA pairs from document content with an LLM.
     """
     qa_pairs = []
     for doc in documents:
-        prompt = f"""你是一个专业的测试数据生成器。请基于以下文档内容，生成 {num_pairs} 个高质量的问题和答案对。
-要求：
-- 问题必须直接基于文档内容，不能凭空编造
-- 答案必须准确、完整，引用原文中的具体信息
-- 问题类型要多样化：事实查询、对比分析、总结归纳等
-- 返回格式为 JSON 数组，每个元素包含 "question" 和 "answer" 字段
+        prompt = f"""You are a professional test-data generator. Based on the document below,
+generate {num_pairs} high-quality question-answer pairs.
+Requirements:
+- Questions must be grounded in the document — no invented facts
+- Answers must be accurate and complete, citing concrete details from the text
+- Diversify question types: fact lookup, comparison, summarization, etc.
+- Return a JSON array; each element has "question" and "answer" fields
 
-文档内容：
-{doc[:3000]}  # 限制长度，避免超出 token 限制
+Document:
+{doc[:3000]}  # truncate to stay within the token budget
 """
         response = client.chat.completions.create(
             model="gpt-4o",
@@ -182,10 +183,10 @@ def generate_qa_pairs(documents: list[str], num_pairs: int = 10) -> list[dict]:
         qa_pairs.extend(result.get("qa_pairs", []))
     return qa_pairs
 
-# 使用示例
+# Usage example
 documents = [
-    "RAG 是一种结合检索和生成的技术，它先从知识库中检索相关文档，再让 LLM 基于这些文档生成答案。",
-    "RAG 的核心优势在于能够有效减少幻觉，让 LLM 的回答有据可依。"
+    "RAG combines retrieval and generation: it retrieves relevant docs from a knowledge base, then has the LLM answer grounded in those docs.",
+    "RAG's core strength is reducing hallucinations so LLM answers stay evidence-based."
 ]
 qa_pairs = generate_qa_pairs(documents, num_pairs=3)
 for qa in qa_pairs:
@@ -216,30 +217,30 @@ from datasets import Dataset
 from ragas import evaluate
 from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
 
-# 准备评估数据：每个样本包含问题、答案、检索到的上下文、标准答案（可选）
+# Evaluation data: question, answer, retrieved contexts, optional ground truth
 eval_dataset = Dataset.from_dict({
-    "question": ["什么是 RAG？", "RAG 有哪些优势？"],
+    "question": ["What is RAG?", "What are RAG's advantages?"],
     "answer": [
-        "RAG 是一种结合检索和生成的技术，它先从知识库中检索相关文档，再让 LLM 基于这些文档生成答案。",
-        "RAG 的核心优势在于减少幻觉、提高答案的可追溯性，以及能够利用最新知识。"
+        "RAG combines retrieval and generation: it retrieves relevant docs, then has the LLM answer from them.",
+        "RAG's core strengths are fewer hallucinations, better traceability, and access to up-to-date knowledge."
     ],
     "contexts": [
-        ["RAG 是一种结合检索和生成的技术..."],
-        ["RAG 的优势包括减少幻觉、提高可追溯性、利用最新知识..."]
+        ["RAG combines retrieval and generation..."],
+        ["RAG advantages include fewer hallucinations, better traceability, and up-to-date knowledge..."]
     ],
     "ground_truth": [
-        "RAG 是 Retrieval-Augmented Generation 的缩写，是一种结合检索和生成的技术。",
-        "RAG 可以减少幻觉、提高答案可追溯性、利用最新知识。"
+        "RAG stands for Retrieval-Augmented Generation — a pattern that combines retrieval and generation.",
+        "RAG can reduce hallucinations, improve answer traceability, and use the latest knowledge."
     ]
 })
 
-# 执行评估
+# Run evaluation
 result = evaluate(
     eval_dataset,
     metrics=[faithfulness, answer_relevancy, context_precision, context_recall]
 )
 print(result)
-# 输出示例：
+# Example output:
 # {'faithfulness': 0.95, 'answer_relevancy': 0.88, 'context_precision': 0.92, 'context_recall': 0.85}
 ```
 
@@ -254,23 +255,23 @@ from deepeval import assert_test
 from deepeval.metrics import FaithfulnessMetric, AnswerRelevancyMetric
 from deepeval.test_case import LLMTestCase
 
-# 定义测试用例
+# Define a test case
 test_case = LLMTestCase(
-    input="RAG 有哪些优势？",
-    actual_output="RAG 可以减少幻觉、提高答案可追溯性，并且能够利用最新知识。",
+    input="What are RAG's advantages?",
+    actual_output="RAG can reduce hallucinations, improve answer traceability, and use up-to-date knowledge.",
     retrieval_context=[
-        "RAG 的优势包括减少幻觉、提高可追溯性、利用最新知识。"
+        "RAG advantages include fewer hallucinations, better traceability, and up-to-date knowledge."
     ]
 )
 
-# 定义评估指标并设置阈值
+# Metrics with thresholds
 faithfulness_metric = FaithfulnessMetric(threshold=0.8)
 answer_relevancy_metric = AnswerRelevancyMetric(threshold=0.7)
 
-# 运行测试
+# Run the test
 def test_rag_quality():
     assert_test(test_case, [faithfulness_metric, answer_relevancy_metric])
-    # 如果忠实度分数低于 0.8 或答案相关性分数低于 0.7，测试会失败
+    # Fails if faithfulness < 0.8 or answer relevancy < 0.7
 ```
 
 It also supports custom metrics, CI integration, and detailed reports.
@@ -333,7 +334,7 @@ jobs:
 
       - name: Check thresholds
         run: |
-          # 如果评估分数低于阈值，退出码非 0，阻断 CI
+          # Non-zero exit if scores are below threshold — block the CI pipeline
           python check_thresholds.py
 ```
 

@@ -220,15 +220,16 @@ Here **Langfuse provides end-to-end cost traceability, while LangSmith provides 
 A simplified architecture of where they sit in a production system:
 
 ```text
-            用户请求
+            User request
                |
-        [ LLM 应用服务 ]
+        [ LLM application service ]
           /      |      \
-    SDK 调用  SDK 上报  异常抛出
-    (回调)    (异步)     (捕获)
+    SDK call  SDK report  Exception
+    (callback)  (async)    (capture)
       |         |         |
    LangSmith   Langfuse   Sentry
-  (实验/调试) (生产观测)  (错误追踪)
+  (experiment/ (prod obs) (error
+   debug)                  tracking)
 ```
 
 In a mature Harness Engineering practice, a recommended integration pattern is:

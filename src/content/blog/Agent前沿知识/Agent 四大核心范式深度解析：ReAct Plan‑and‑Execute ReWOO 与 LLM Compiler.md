@@ -232,14 +232,14 @@ flowchart TD
 ```python
 def react_agent(user_query):
     while True:
-        # 1. 推理：让 LLM 根据历史与当前状态生成 Thought 和可能的 Action
+        # 1. Reason: ask the LLM for a Thought and optional Action from history + state
         thought, action = llm.generate_thought_and_action(user_query, history)
         if action is None:
-            # 没有更多行动，直接输出最终回答
+            # No more actions — return the final answer
             return thought
-        # 2. 行动：执行工具调用
+        # 2. Act: execute the tool call
         observation = execute_tool(action)
-        # 3. 将观察结果追加到历史中，继续下一轮
+        # 3. Append the observation to history and continue
         history.append(f"Observation: {observation}")
 ```
 
@@ -275,16 +275,16 @@ flowchart TD
 
 ```python
 def plan_and_execute_agent(user_query):
-    # 第一步：生成计划
-    plan = llm.create_plan(user_query)  # 返回一个步骤列表
+    # Step 1: create a plan
+    plan = llm.create_plan(user_query)  # returns a list of steps
     context = {}
     for step in plan:
         if step.requires_tool:
-            # 执行器调用工具
+            # Executor invokes tools
             result = execute_tool(step.action, context)
             context.update(result)
         else:
-            # 执行器直接生成文本或操作
+            # Executor produces text or an operation directly
             result = llm.execute_step(step, context)
             context.update(result)
     return context["final_answer"]
@@ -313,11 +313,11 @@ flowchart TD
 
 ```python
 def rewoo_agent(user_query):
-    # 1. Planner 生成计划，里面用特殊符号标记工具调用，如 #E1 = search("xxx")
+    # 1. Planner emits a plan with special markers for tool calls, e.g. #E1 = search("xxx")
     plan = llm.generate_plan_with_tool_placeholders(user_query)
-    # 2. Worker 解析计划，提取所有工具调用并批量执行
+    # 2. Worker parses the plan, extracts all tool calls, and runs them in batch
     observations = resolve_all_tools(plan)
-    # 3. Solver 将观察结果替换回计划，生成最终回答
+    # 3. Solver substitutes observations back into the plan and produces the final answer
     final_answer = llm.generate_final_answer(plan, observations)
     return final_answer
 ```
@@ -346,11 +346,11 @@ flowchart TD
 
 ```python
 def llm_compiler_agent(user_query):
-    # 1. Compiler 生成 DAG
-    dag = llm.generate_dag(user_query)  # 节点为函数调用，边为依赖关系
-    # 2. 并行执行
-    results = parallel_execute(dag)  # 内置依赖分析，自动并发
-    # 3. 最终合并
+    # 1. Compiler builds a DAG
+    dag = llm.generate_dag(user_query)  # nodes are function calls; edges are dependencies
+    # 2. Execute in parallel
+    results = parallel_execute(dag)  # dependency-aware concurrency
+    # 3. Merge the final result
     final_answer = llm.merge_results(results)
     return final_answer
 ```
