@@ -33,15 +33,15 @@ RAG 的标准流程可以概括为三步：
 
 ```mermaid
 flowchart LR
-    A[用户提问] --> B[检索模块]
-    B --> C[向量数据库]
-    C --> D[召回Top-K文档]
-    D --> E[上下文拼接]
-    E --> F[LLM生成]
-    F --> G[输出答案]
+    A["用户提问"] --> B["检索模块"]
+    B --> C["向量数据库"]
+    C --> D["召回Top-K文档"]
+    D --> E["上下文拼接"]
+    E --> F["LLM生成"]
+    F --> G["输出答案"]
     
-    H[知识库文档] --> I[分块 Chunking]
-    I --> J[向量化 Embedding]
+    H["知识库文档"] --> I["分块 Chunking"]
+    I --> J["向量化 Embedding"]
     J --> C
 ```
 
@@ -327,11 +327,11 @@ def rewrite_query(original_query: str, conversation_history: list = None) -> str
 
 ```mermaid
 flowchart TD
-    A[用户问题] --> B[第一轮检索]
-    B --> C[生成初步答案/关键词]
-    C --> D[提取缺失信息实体]
-    D --> E[第二轮检索]
-    E --> F[综合多轮结果生成最终答案]
+    A["用户问题"] --> B["第一轮检索"]
+    B --> C["生成初步答案/关键词"]
+    C --> D["提取缺失信息实体"]
+    D --> E["第二轮检索"]
+    E --> F["综合多轮结果生成最终答案"]
 ```
 
 这种模式在医疗诊断、法律条文检索等需要逐步深入的专业场景中效果显著。
@@ -387,27 +387,27 @@ RAG 评估需要分别衡量检索质量和生成质量：
 
 ```mermaid
 flowchart LR
-    subgraph 索引流水线
-        A[文档上传] --> B[格式解析]
-        B --> C[分块 Chunking]
-        C --> D[向量化 Embedding]
-        D --> E[向量数据库写入]
+    subgraph sg1["索引流水线"]
+        A["文档上传"] --> B["格式解析"]
+        B --> C["分块 Chunking"]
+        C --> D["向量化 Embedding"]
+        D --> E["向量数据库写入"]
     end
     
-    subgraph 在线服务
-        F[用户 Query] --> G[Query 改写/扩展]
-        G --> H[向量检索]
-        H --> I[Reranker 重排序]
-        I --> J[上下文拼接]
-        J --> K[LLM 生成]
-        K --> L[后处理/校验]
-        L --> M[返回答案]
+    subgraph sg2["在线服务"]
+        F["用户 Query"] --> G["Query 改写/扩展"]
+        G --> H["向量检索"]
+        H --> I["Reranker 重排序"]
+        I --> J["上下文拼接"]
+        J --> K["LLM 生成"]
+        K --> L["后处理/校验"]
+        L --> M["返回答案"]
     end
     
-    subgraph 持续改进
-        N[用户反馈] --> O[Bad Case 收集]
-        O --> P[回放评估]
-        P --> Q[策略优化]
+    subgraph sg3["持续改进"]
+        N["用户反馈"] --> O["Bad Case 收集"]
+        O --> P["回放评估"]
+        P --> Q["策略优化"]
         Q -.->|迭代| C
         Q -.->|迭代| H
     end
@@ -756,7 +756,7 @@ Hard questions often need more than one hop: retrieve → extract new entities �
 ```mermaid
 flowchart TD
     A[User question] --> B[Round-1 retrieval]
-    B --> C[Draft answer / keywords]
+    B --> C["Draft answer / keywords"]
     C --> D[Extract missing entities]
     D --> E[Round-2 retrieval]
     E --> F[Synthesize final answer]
@@ -821,7 +821,7 @@ flowchart LR
     end
 
     subgraph Online[Online path]
-        F[User query] --> G[Rewrite / expand]
+        F[User query] --> G["Rewrite / expand"]
         G --> H[Vector retrieval]
         H --> I[Rerank]
         I --> J[Context pack]

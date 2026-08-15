@@ -868,6 +868,9 @@ html[data-lang="en"] .article-panel[data-lang-panel="zh"] {
   background: #fff;
   overflow-x: auto;
 }
+.mermaid-wrap .mermaid-source {
+  display: none !important;
+}
 .mermaid-wrap .mermaid {
   display: flex;
   justify-content: center;

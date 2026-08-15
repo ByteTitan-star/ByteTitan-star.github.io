@@ -55,44 +55,75 @@ const displayDescriptionEn = descriptionEn ?? description;
       return language.includes('mermaid');
     };
 
-    const renderMermaid = async () => {
+    let mermaidApi: { initialize: Function; run: Function } | null = null;
+
+    const getMermaid = async () => {
+      if (mermaidApi) return mermaidApi;
+      const mod = await import('mermaid');
+      mermaidApi = mod.default;
+      mermaidApi.initialize({
+        startOnLoad: false,
+        theme: 'neutral',
+        securityLevel: 'loose',
+        fontFamily: "Segoe UI, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+      });
+      return mermaidApi;
+    };
+
+    /** Turn every mermaid <pre> into a wrap that keeps source for lazy render. */
+    const prepareMermaidBlocks = () => {
       const root = document.querySelector('[data-article-prose]');
       if (!root) return;
 
       const blocks = Array.from(root.querySelectorAll('pre')).filter(
         (pre): pre is HTMLElement => pre instanceof HTMLElement && isMermaidBlock(pre)
       );
-      if (!blocks.length) return;
 
-      const mermaid = (await import('mermaid')).default;
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'neutral',
-        securityLevel: 'loose',
-        fontFamily: "Segoe UI, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif"
-      });
-
-      const targets: HTMLElement[] = [];
       blocks.forEach((pre) => {
         const source = pre.textContent?.trim();
         if (!source) return;
 
         const wrap = document.createElement('div');
         wrap.className = 'mermaid-wrap';
+        // Prefer a child <script> store so quotes/newlines stay intact
+        const store = document.createElement('script');
+        store.type = 'text/plain';
+        store.className = 'mermaid-source';
+        store.textContent = source;
         const graph = document.createElement('div');
         graph.className = 'mermaid';
-        graph.textContent = source;
+        wrap.appendChild(store);
         wrap.appendChild(graph);
         pre.replaceWith(wrap);
-        targets.push(graph);
       });
+    };
 
-      if (targets.length) {
-        await mermaid.run({ nodes: targets });
+    const renderMermaidIn = async (scope: ParentNode) => {
+      const wraps = Array.from(scope.querySelectorAll('.mermaid-wrap')).filter(
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement && el.dataset.mermaidRendered !== '1'
+      );
+      if (!wraps.length) return;
+
+      const mermaid = await getMermaid();
+      for (const wrap of wraps) {
+        const store = wrap.querySelector('.mermaid-source');
+        const graph = wrap.querySelector('.mermaid');
+        const source = store?.textContent?.trim() || '';
+        if (!(graph instanceof HTMLElement) || !source) continue;
+        graph.removeAttribute('data-processed');
+        graph.textContent = source;
+        try {
+          await mermaid.run({ nodes: [graph] });
+          wrap.dataset.mermaidRendered = '1';
+        } catch {
+          graph.textContent = source;
+          wrap.dataset.mermaidError = '1';
+        }
       }
     };
 
-    const syncArticleLanguage = () => {
+    const syncArticleLanguage = async () => {
       const lang = document.documentElement.dataset.lang === 'zh' ? 'zh' : 'en';
       document.querySelectorAll('[data-lang-panel]').forEach((panel) => {
         const on = panel.getAttribute('data-lang-panel') === lang;
@@ -103,6 +134,9 @@ const displayDescriptionEn = descriptionEn ?? description;
       const tocCard = document.querySelector('[data-toc-card]');
       const tocNav = document.querySelector('[data-toc-nav]');
       const panel = document.querySelector(`[data-lang-panel="${lang}"]`);
+      const renderRoot = panel || document.querySelector('[data-article-prose]');
+      if (renderRoot) await renderMermaidIn(renderRoot);
+
       if (!tocCard || !tocNav || !panel) return;
 
       tocNav.innerHTML = '';
@@ -118,11 +152,13 @@ const displayDescriptionEn = descriptionEn ?? description;
       tocCard.hidden = headings.length === 0;
     };
 
-    renderMermaid()
+    prepareMermaidBlocks();
+    syncArticleLanguage()
       .catch(() => {})
       .finally(() => {
-        syncArticleLanguage();
-        window.addEventListener('site-language-change', syncArticleLanguage);
+        window.addEventListener('site-language-change', () => {
+          syncArticleLanguage().catch(() => {});
+        });
       });
   </script>
 

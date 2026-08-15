@@ -324,7 +324,7 @@ Hard questions often need more than one hop: retrieve â†’ extract new entities â
 ```mermaid
 flowchart TD
     A[User question] --> B[Round-1 retrieval]
-    B --> C[Draft answer / keywords]
+    B --> C["Draft answer / keywords"]
     C --> D[Extract missing entities]
     D --> E[Round-2 retrieval]
     E --> F[Synthesize final answer]
@@ -389,7 +389,7 @@ flowchart LR
     end
 
     subgraph Online[Online path]
-        F[User query] --> G[Rewrite / expand]
+        F[User query] --> G["Rewrite / expand"]
         G --> H[Vector retrieval]
         H --> I[Rerank]
         I --> J[Context pack]

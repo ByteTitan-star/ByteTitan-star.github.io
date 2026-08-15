@@ -69,7 +69,7 @@ RAG is the dominant production Agent pattern: question → intent/rewrite → re
 
 ```mermaid
 flowchart TD
-    A[User question] --> B[Intent / rewrite]
+    A[User question] --> B["Intent / rewrite"]
     B --> C[Retrieval]
     C --> D[Multi-path recall]
     D --> E[Reranker]
@@ -140,8 +140,8 @@ flowchart LR
     A[Requirements] --> B[Collect real questions]
     B --> C[Human gold answers]
     C --> D[Ideal retrieval docs]
-    D --> E[Boundary / adversarial cases]
-    E --> F[Train / test split]
+    D --> E["Boundary / adversarial cases"]
+    E --> F["Train / test split"]
     F --> G[Versioning]
 ```
 
@@ -286,14 +286,14 @@ flowchart TD
     B --> C[Unit eval - DeepEval]
     B --> D[RAG quality - RAGAS]
     B --> E[E2E regression]
-    B --> F[Perf & cost]
+    B --> F["Perf & cost"]
     C --> G[Report]
     D --> G
     E --> G
     F --> G
     G --> H{Pass thresholds?}
-    H -->|Yes| I[Auto merge / release]
-    H -->|No| J[Alert & block]
+    H -->|Yes| I["Auto merge / release"]
+    H -->|No| J["Alert & block"]
 ```
 
 ```yaml

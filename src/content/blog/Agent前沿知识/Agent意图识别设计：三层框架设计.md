@@ -31,10 +31,10 @@ pubDate: 2026-08-12
 ```mermaid
 flowchart TD
     A["用户输入"] --> B["第一层：规则层"]
-    B --> C{是否命中规则？}
+    B --> C{"是否命中规则？"}
     C -->|是| D["直接返回意图<br>执行对应动作"]
     C -->|否| E["第二层：小模型层"]
-    E --> F{置信度 > 阈值？}
+    E --> F{"置信度 > 阈值？"}
     F -->|是| G["返回意图<br>执行对应动作"]
     F -->|否| H["第三层：LLM兜底层"]
     H --> I["深度理解与推理<br>多轮意图澄清<br>复合意图拆分"]
@@ -80,9 +80,9 @@ flowchart TD
     A --> C["关键词匹配"]
     A --> D["模板匹配"]
     
-    B --> E{是否匹配？}
-    C --> F{是否匹配？}
-    D --> G{是否匹配？}
+    B --> E{"是否匹配？"}
+    C --> F{"是否匹配？"}
+    D --> G{"是否匹配？"}
     
     E -->|是| H["返回对应意图"]
     F -->|是| H
@@ -280,7 +280,7 @@ flowchart TD
     B --> C{Rule hit?}
     C -->|Yes| D["Return intent<br>Run action"]
     C -->|No| E["Layer 2: Small model"]
-    E --> F{Confidence > threshold?}
+    E --> F{"Confidence > threshold?"}
     F -->|Yes| G["Return intent<br>Run action"]
     F -->|No| H["Layer 3: LLM fallback"]
     H --> I["Deep understanding<br>Multi-turn clarification<br>Compound-intent split"]

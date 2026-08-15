@@ -23,43 +23,43 @@ Hermes并非一个单一的产品，而是一个技术生态的统称——它�
 
 ```mermaid
 graph TD
-    subgraph 用户交互层
-        A[用户输入/任务] --> B[Agent Loop 入口]
+    subgraph sg1["用户交互层"]
+        A["用户输入/任务"] --> B["Agent Loop 入口"]
     end
 
-    subgraph 核心执行层
-        B --> C{思考-行动循环<br>Agent Loop}
-        C -->|需要工具| D[执行工具调用]
-        C -->|无需工具| E[生成最终回复]
-        D --> F[获取工具执行结果]
+    subgraph sg2["核心执行层"]
+        B --> C{"思考-行动循环<br>Agent Loop"}
+        C -->|需要工具| D["执行工具调用"]
+        C -->|无需工具| E["生成最终回复"]
+        D --> F["获取工具执行结果"]
         F --> C
     end
 
-    subgraph 记忆与上下文层
-        G[三层Prompt架构] --> B
-        H[五层记忆系统] --> G
-        H1[工作上下文] --> H
-        H2[会话记忆] --> H
-        H3[用户画像] --> H
-        H4[环境记忆] --> H
-        H5[技能库] --> H
+    subgraph sg3["记忆与上下文层"]
+        G["三层Prompt架构"] --> B
+        H["五层记忆系统"] --> G
+        H1["工作上下文"] --> H
+        H2["会话记忆"] --> H
+        H3["用户画像"] --> H
+        H4["环境记忆"] --> H
+        H5["技能库"] --> H
     end
 
-    subgraph 自进化技能系统
-        F --> I[任务成功完成?]
-        I -->|是| J[复盘 & 提炼解决方案]
-        J --> K[生成/更新Skill文件<br>（Markdown格式）]
-        K --> L[存储到技能库<br>（H5）]
+    subgraph sg4["自进化技能系统"]
+        F --> I["任务成功完成?"]
+        I -->|是| J["复盘 & 提炼解决方案"]
+        J --> K["生成/更新Skill文件<br>（Markdown格式）"]
+        K --> L["存储到技能库<br>（H5）"]
         L -.->|下次相似任务加载| G
-        I -->|否| M[记录失败原因]
-        M --> N[人工反馈或自动纠错]
-        N --> O[修改Skill文件]
+        I -->|否| M["记录失败原因"]
+        M --> N["人工反馈或自动纠错"]
+        N --> O["修改Skill文件"]
         O --> L
     end
 
     %%% 修复点 1：ID 去掉括号，使用 "显示名称" 保留原标题 %%%
-    subgraph 事件驱动多Agent协作可选["事件驱动多Agent协作(可选)"]
-        P[事件总线] -.->|解耦通信| Q[其他Agent Actor]
+    subgraph sg5["#quot;事件驱动多Agent协作可选[事件驱动多Agent协作(可选)"]"]
+        P["事件总线"] -.->|解耦通信| Q["其他Agent Actor"]
         B -.-> P
     end
 
@@ -193,11 +193,11 @@ The Mermaid diagram below shows the full Hermes Agent architecture—from the in
 ```mermaid
 graph TD
     subgraph UserInteraction["User Interaction"]
-        A[User input / task] --> B[Agent Loop entry]
+        A["User input / task"] --> B[Agent Loop entry]
     end
 
     subgraph CoreExecution["Core Execution"]
-        B --> C{Think–Act loop<br>Agent Loop}
+        B --> C{"Think–Act loop<br>Agent Loop"}
         C -->|Needs tools| D[Run tool calls]
         C -->|No tools| E[Produce final reply]
         D --> F[Collect tool results]
@@ -216,9 +216,9 @@ graph TD
 
     subgraph SelfEvolvingSkills["Self-Evolving Skills"]
         F --> I[Task succeeded?]
-        I -->|Yes| J[Retrospective & distill solution]
-        J --> K[Create/update Skill file<br>Markdown]
-        K --> L[Store in skill library<br>H5]
+        I -->|Yes| J["Retrospective & distill solution"]
+        J --> K["Create/update Skill file<br>Markdown"]
+        K --> L["Store in skill library<br>H5"]
         L -.->|Load on similar tasks| G
         I -->|No| M[Record failure cause]
         M --> N[Human feedback or auto-correct]

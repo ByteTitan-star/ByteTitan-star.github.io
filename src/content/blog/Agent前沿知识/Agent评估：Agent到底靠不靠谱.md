@@ -79,15 +79,15 @@ RAG（Retrieval-Augmented Generation）是目前最主流的 Agent 落地模式�
 
 ```mermaid
 flowchart TD
-    A[用户提问] --> B[意图识别/改写]
-    B --> C[检索模块]
-    C --> D[多路召回]
-    D --> E[重排序 Reranker]
-    E --> F[上下文整合]
-    F --> G[LLM 生成]
-    G --> H[后处理/校验]
-    H --> I[返回答案]
-    C -.-> J[(知识库)]
+    A["用户提问"] --> B["意图识别/改写"]
+    B --> C["检索模块"]
+    C --> D["多路召回"]
+    D --> E["重排序 Reranker"]
+    E --> F["上下文整合"]
+    F --> G["LLM 生成"]
+    G --> H["后处理/校验"]
+    H --> I["返回答案"]
+    C -.-> J[("知识库")]
     D -.-> J
 ```
 
@@ -151,12 +151,12 @@ RAG Agent 有一个“双重质量”特性：**检索质量**决定了给 LLM �
 
 ```mermaid
 flowchart LR
-    A[需求分析] --> B[采集真实问题]
-    B --> C[人工标注标准答案]
-    C --> D[构建理想检索文档集]
-    D --> E[设计边界/对抗样本]
-    E --> F[划分训练/测试集]
-    F --> G[版本管理]
+    A["需求分析"] --> B["采集真实问题"]
+    B --> C["人工标注标准答案"]
+    C --> D["构建理想检索文档集"]
+    D --> E["设计边界/对抗样本"]
+    E --> F["划分训练/测试集"]
+    F --> G["版本管理"]
 ```
 
 评估数据集通常有三种来源：
@@ -301,18 +301,18 @@ DeepEval 还支持自定义指标、集成到 CI/CD Pipeline（后面会讲）�
 
 ```mermaid
 flowchart TD
-    A[Git Push] --> B[触发 CI Pipeline]
-    B --> C[单元评估 - DeepEval]
-    B --> D[RAG 质量评估 - RAGAS]
-    B --> E[端到端回归测试]
-    B --> F[性能与成本评估]
-    C --> G[生成评估报告]
+    A[Git Push] --> B["触发 CI Pipeline"]
+    B --> C["单元评估 - DeepEval"]
+    B --> D["RAG 质量评估 - RAGAS"]
+    B --> E["端到端回归测试"]
+    B --> F["性能与成本评估"]
+    C --> G["生成评估报告"]
     D --> G
     E --> G
     F --> G
-    G --> H{达标?}
-    H -->|是| I[自动发布/合并]
-    H -->|否| J[告警并阻断]
+    G --> H{"达标?"}
+    H -->|是| I["自动发布/合并"]
+    H -->|否| J["告警并阻断"]
 ```
 
 下面是一个 GitHub Actions 的配置示例，展示如何把 DeepEval 和 RAGAS 集成到 CI 流程中：
@@ -465,7 +465,7 @@ RAG is the dominant production Agent pattern: question → intent/rewrite → re
 
 ```mermaid
 flowchart TD
-    A[User question] --> B[Intent / rewrite]
+    A[User question] --> B["Intent / rewrite"]
     B --> C[Retrieval]
     C --> D[Multi-path recall]
     D --> E[Reranker]
@@ -536,8 +536,8 @@ flowchart LR
     A[Requirements] --> B[Collect real questions]
     B --> C[Human gold answers]
     C --> D[Ideal retrieval docs]
-    D --> E[Boundary / adversarial cases]
-    E --> F[Train / test split]
+    D --> E["Boundary / adversarial cases"]
+    E --> F["Train / test split"]
     F --> G[Versioning]
 ```
 
@@ -682,14 +682,14 @@ flowchart TD
     B --> C[Unit eval - DeepEval]
     B --> D[RAG quality - RAGAS]
     B --> E[E2E regression]
-    B --> F[Perf & cost]
+    B --> F["Perf & cost"]
     C --> G[Report]
     D --> G
     E --> G
     F --> G
     G --> H{Pass thresholds?}
-    H -->|Yes| I[Auto merge / release]
-    H -->|No| J[Alert & block]
+    H -->|Yes| I["Auto merge / release"]
+    H -->|No| J["Alert & block"]
 ```
 
 ```yaml
