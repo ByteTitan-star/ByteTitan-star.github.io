@@ -80,6 +80,8 @@
         status.textContent = copy('Add tracks in /public/audio/tracks', '请把音乐文件放入 /public/audio/tracks');
       } else if (playing) {
         status.textContent = `${playlists[playlistIndex]?.name || copy('Playlist', '歌单')} · ${trackIndex + 1}/${currentList().length}`;
+      } else if (audio.src && audio.readyState < 3 && shouldPlay) {
+        status.textContent = copy('Buffering…', '缓冲中…');
       } else {
         status.textContent = `${copy('Tap to play', '点击播放')} · ${Math.round(audio.volume * 100)}%`;
       }
@@ -89,10 +91,19 @@
       const track = currentTrack();
       if (!track?.src) { updateUI(); return; }
       audio.src = track.src;
+      audio.preload = 'auto';
       audio.load();
       saveState();
+      status.textContent = copy('Buffering…', '缓冲中…');
       updateUI();
-      if (autoplay) play();
+      if (!autoplay) return;
+
+      const tryPlay = () => {
+        audio.removeEventListener('canplay', tryPlay);
+        play();
+      };
+      if (audio.readyState >= 3) play();
+      else audio.addEventListener('canplay', tryPlay, { once: true });
     };
 
     const play = async () => {
@@ -233,30 +244,21 @@
       root.style.setProperty('--footer-clearance', `${Math.ceil(visibleFooter)}px`);
     };
 
-    const deferUntilBgReady = (fn) => {
-      const video = document.querySelector('.site-motion-bg');
-      if (!video) {
-        fn();
-        return;
+    const deferMusicBoot = (fn) => {
+      // Keep first paint free for the hero video, but don't wait on a full canplay
+      // (that used to delay a 16MB+ FLAC fetch by several seconds).
+      const start = () => window.setTimeout(fn, 700);
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(start, { timeout: 1200 });
+      } else {
+        start();
       }
-      let done = false;
-      const run = () => {
-        if (done) return;
-        done = true;
-        fn();
-      };
-      if (video.readyState >= 2) {
-        run();
-        return;
-      }
-      video.addEventListener('canplay', run, { once: true });
-      window.setTimeout(run, 3500);
     };
 
     window.addEventListener('scroll', syncFooterClearance, { passive: true });
     window.addEventListener('resize', syncFooterClearance);
     window.addEventListener('site-language-change', updateUI);
     syncFooterClearance();
-    deferUntilBgReady(boot);
+    deferMusicBoot(boot);
   })();
 </script>

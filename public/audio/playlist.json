@@ -5,18 +5,18 @@
     {
       "name": "Focus",
       "tracks": [
-        { "title": "Jamvana — OBA O", "src": "/audio/tracks/jamvana-oba-o.flac" },
-        { "title": "LVTHER & Myzica — Some Kind Of Magic", "src": "/audio/tracks/lvther-myzica-some-kind-of-magic.flac" },
-        { "title": "Son Han — Slow Down", "src": "/audio/tracks/son-han-slow-down.flac" },
-        { "title": "STRFKR — While I'm Alive", "src": "/audio/tracks/strfkr-while-im-alive.flac" }
+        { "title": "Jamvana — OBA O", "src": "/audio/tracks/jamvana-oba-o.mp3" },
+        { "title": "LVTHER & Myzica — Some Kind Of Magic", "src": "/audio/tracks/lvther-myzica-some-kind-of-magic.mp3" },
+        { "title": "Son Han — Slow Down", "src": "/audio/tracks/son-han-slow-down.mp3" },
+        { "title": "STRFKR — While I'm Alive", "src": "/audio/tracks/strfkr-while-im-alive.mp3" }
       ]
     },
     {
       "name": "Night",
       "tracks": [
-        { "title": "Dead Famous Brothers — Metrohead", "src": "/audio/tracks/dead-famous-brothers-metrohead.flac" },
-        { "title": "TroyBoi — ili", "src": "/audio/tracks/troyboi-ili.flac" },
-        { "title": "Grabbitz — Die For You", "src": "/audio/tracks/grabbitz-die-for-you.flac" }
+        { "title": "Dead Famous Brothers — Metrohead", "src": "/audio/tracks/dead-famous-brothers-metrohead.mp3" },
+        { "title": "TroyBoi — ili", "src": "/audio/tracks/troyboi-ili.mp3" },
+        { "title": "Grabbitz — Die For You", "src": "/audio/tracks/grabbitz-die-for-you.mp3" }
       ]
     }
   ]
