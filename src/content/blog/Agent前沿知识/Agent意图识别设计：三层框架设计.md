@@ -1,6 +1,8 @@
 ---
 title: "Agent意图识别设计：三层框架设计"
+titleEn: "Agent Intent Recognition: A Three-Layer Funnel Design"
 description: "别再让 LLM 包办一切意图识别了！本文分享工业级三层漏斗架构：规则层拦截高频意图、小模型层处理已知变体、LLM 仅兜底复杂意图，实现延迟从 600ms 降至 30ms 以内，LLM 调用量减少 80%。"
+descriptionEn: "Stop sending every intent to an LLM. This article shares a production three-layer funnel—rules for hot intents, a small model for known variants, and LLM only as fallback—cutting latency from ~600ms to under 30ms and LLM calls by ~80%."
 pubDate: 2026-08-12
 ---
 # Agent 意图识别设计：规则+小模型+LLM 三层漏斗，完美平衡速度、成本与智能
@@ -249,3 +251,223 @@ flowchart TD
 **做 Agent，意图识别千万别只押宝 LLM。** 把好钢用在刀刃上，规则和小模型解决确定性，LLM 解决不确定性，这才是工程上的最佳实践。
 
 ---
+
+<!-- i18n:en -->
+
+# Agent Intent Recognition: Rules + Small Model + LLM Funnel for Speed, Cost, and Intelligence
+
+> Don’t throw every intent at a large model. Hundreds of milliseconds per call and rising cost will not survive production. This article shares an industrial Agent intent stack: **rules → small model → LLM fallback**, so hot intents respond in milliseconds and only hard cases reach the LLM.
+
+---
+
+### Why LLM-Only Intent Fails
+
+Many Agent demos send every user utterance to an LLM with a giant prompt for intent, slots, and even the final answer. It looks smart in a demo and collapses in production:
+
+- **Latency**: one LLM call often costs 200–800ms. Doing that on every turn pushes the whole dialogue into multi-second UX.
+- **Cost**: even GPT-3.5-class models hurt at moderate QPS; GPT-4-class or self-hosted peers hurt more.
+- **Overkill on simple asks**: “how do I return this?”, “check my order”, “talk to a human” are high-frequency, fixed-path intents that do not need deep “thinking.”
+
+A shippable intent system must **tier intents**: clear cases die in cheap layers; only true understanding problems reach the LLM.
+
+---
+
+### Three-Layer Funnel Architecture
+
+```mermaid
+flowchart TD
+    A["User input"] --> B["Layer 1: Rules"]
+    B --> C{Rule hit?}
+    C -->|Yes| D["Return intent<br>Run action"]
+    C -->|No| E["Layer 2: Small model"]
+    E --> F{Confidence > threshold?}
+    F -->|Yes| G["Return intent<br>Run action"]
+    F -->|No| H["Layer 3: LLM fallback"]
+    H --> I["Deep understanding<br>Multi-turn clarification<br>Compound-intent split"]
+    I --> J["Final intent result"]
+    
+    D --> J
+    G --> J
+    
+    style B fill:#e1f5fe
+    style E fill:#f3e5f5
+    style H fill:#fff3e0
+```
+
+In words:
+
+```
+User input
+   ↓
+[ Layer 1: Rules ]  → hit → return intent / run action
+   ↓ (miss)
+[ Layer 2: Small model ] → hit / high confidence → execute
+   ↓ (miss / low confidence)
+[ Layer 3: LLM fallback ] → hard reasoning, clarification, unknowns
+   ↓
+Final intent
+```
+
+Each layer **filters and routes**. Cost rises as you go down; so does ambiguity. The goal: **most traffic finishes in the first two layers; the LLM only sees the long tail.**
+
+---
+
+### Layer 1: Rules — Cut the Obvious Fast
+
+```mermaid
+flowchart TD
+    A["User input"] --> B["Regex match"]
+    A --> C["Keyword match"]
+    A --> D["Template match"]
+    
+    B --> E{Match?}
+    C --> F{Match?}
+    D --> G{Match?}
+    
+    E -->|Yes| H["Return intent"]
+    F -->|Yes| H
+    G -->|Yes| H
+    
+    E -->|No| I["Next layer"]
+    F -->|No| I
+    G -->|No| I
+    
+    H --> J["Run action<br>latency < 5ms"]
+    
+    style B fill:#c8e6c9
+    style C fill:#c8e6c9
+    style D fill:#c8e6c9
+    style H fill:#81c784
+```
+
+Rules are the gatekeeper: **solve the most certain cases at maximum speed**.
+
+#### Techniques
+- **Regex**: fixed patterns like “I want to [verb]”, “help me [verb]”.
+- **Keywords / phrases**: hot-intent lexicon (`return`, `shipping`, `complaint`) with an AC automaton for multi-hit scans.
+- **Prefix / templates**: fixed utterances such as “check balance”, “check in”.
+
+#### How much traffic?
+In customer-support and internal-assistant practice, **rules alone can catch ~30% of intents** when:
+- the business path is crystal clear,
+- phrasings are concentrated,
+- latency must be extreme (e.g. voice hotwords).
+
+#### Don’t dump everything into rules
+Unlimited rules become an unmaintainable monster—conflicts, brittle edits, and business churn. Constraint:
+
+> **Rules only for ultra-clear, highly convergent intents**, e.g.:
+> - Commands: `human agent`, `exit`, `previous`, `next`
+> - Structured queries: `track SF123456` (fixed ID shape)
+> - Hot actions: `check in`, `claim coupon`, `enable night mode`
+>
+> “Why hasn’t that package arrived yet?” still needs entities and reasoning—even if it contains “package”.
+
+Rule hits can return the intent and trigger business logic with **end-to-end latency < 5ms**.
+
+---
+
+### Layer 2: Small Model — Lightweight Router
+
+```mermaid
+graph TB
+    subgraph A["Path A: Fine-tuned classifier"]
+        A1["Labeled intents"] --> A2["BERT-base / TinyBERT<br>lightweight model"]
+        A2 --> A3["Fine-tune"]
+        A3 --> A4["Text classifier"]
+        A4 --> A5["Online inference<br>10-30ms"]
+    end
+    
+    subgraph B["Path B: Embedding recall"]
+        B1["Known intent exemplars"] --> B2["Embed<br>text2vec / bge-small"]
+        B2 --> B3["Vector store"]
+        B4["User input"] --> B5["Embed"]
+        B5 --> B6["Similarity"]
+        B3 --> B6
+        B6 --> B7["Threshold<br>confidence > 0.85"]
+        B7 -->|Yes| B8["Return intent"]
+        B7 -->|No| B9["Next layer"]
+    end
+    
+    style A fill:#e3f2fd
+    style B fill:#f3e5f5
+```
+
+When rules miss, layer 2 handles **known intents with more phrasing variance** at modest cost.
+
+#### Two common paths
+1. **Fine-tuned small classifier** (BERT-base, TinyBERT, MobileBERT): ~10–30ms online.
+2. **Embedding recall + few-shot**: encode exemplars once; similarity above a threshold returns the intent—**no retrain** to add a class, just insert vectors.
+
+#### Typical intents
+- Clear classes, diverse wording (“complain about the rider” / “courier was rude” → `complaint-courier`)
+- Too many variants for rules, enough samples for a small model or vectors
+- Light slot needs solvable by small NER/templates (time, place, order id)
+
+#### Confidence
+Use a high threshold (e.g. 0.85). Below it, escalate to the LLM. After layers 1–2, **~80–90% of traffic** is already handled with almost no perceived lag.
+
+---
+
+### Layer 3: LLM Fallback — Last Line of Intelligence
+
+```mermaid
+flowchart TD
+    A["Intents entering LLM layer"] --> B{"Intent type"}
+    
+    B --> C["Multi-turn"]
+    B --> D["Vague / chitchat"]
+    B --> E["Compound"]
+    B --> F["Unknown"]
+    
+    C --> G["Clarify with dialogue history"]
+    D --> H["Empathy / guide / handoff"]
+    E --> I["Split intents<br>Plan tasks"]
+    F --> J["Deep understand<br>Safe fallback reply"]
+    
+    G --> K["Final intent"]
+    H --> K
+    I --> K
+    J --> K
+    
+    K --> L["Cost controls:<br>trim input, stream, cache"]
+    
+    style C fill:#ffecb3
+    style D fill:#ffecb3
+    style E fill:#ffecb3
+    style F fill:#ffecb3
+    style L fill:#c8e6c9
+```
+
+Traffic here usually has one or more of:
+- **Multi-turn** (“what about the weather there?” needs prior location)
+- **Vague / chitchat**
+- **Compound** intents needing split/order
+- **Unknown** phrasings with low small-model confidence
+
+#### What the LLM does
+- Clarify/confirm with history
+- Heavy reasoning (“cancel last month’s unshipped phone-case order”)
+- Split compound intents into executable sub-tasks
+- Generate safe fallbacks / human handoff copy
+
+#### Cost & latency controls
+- Trim history to the last few relevant turns + current query
+- Stream output for perceived speed
+- Cache identical/near-duplicate hard queries
+
+Because volume is small, average system latency and spend stay low without surrendering intelligence.
+
+---
+
+### Summary
+
+| Layer | Technique | Latency | Share | Best for |
+| --- | --- | --- | --- | --- |
+| Rules | Regex, keywords, AC | <5ms | ~30% | Fixed commands/formats |
+| Small model | Fine-tune / vector recall | 10–30ms | ~50–60% | Known intents with variants |
+| LLM fallback | Large-model reasoning | 200–800ms | 10–20% | Multi-turn, vague, compound, unknown |
+
+In production this funnel moved **average intent latency from ~600ms to under 30ms**, cut LLM calls by **80%+**, and keeps improving as rules and small models iterate.
+
+**Don’t bet Agent intent solely on LLMs.** Rules and small models own certainty; LLMs own uncertainty—that is the engineering optimum.

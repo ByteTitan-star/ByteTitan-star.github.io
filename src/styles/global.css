@@ -811,6 +811,11 @@ summary.btn--ghost[open] { color: var(--ink); }
 
 .prose { max-width: 780px; padding-top: 46px; color: #303845; font-size: 16px; line-height: 1.85; }
 .prose > * { max-width: 780px; }
+.article-panel { max-width: 780px; }
+html[data-lang="zh"] .article-panel[data-lang-panel="en"],
+html[data-lang="en"] .article-panel[data-lang-panel="zh"] {
+  display: none !important;
+}
 .prose h2, .prose h3, .prose h4 {
   color: var(--ink);
   font-family: var(--sans);

@@ -1,6 +1,8 @@
 ---
 title: "Agent 四大核心范式深度解析：ReAct Plan‑and‑Execute ReWOO 与 LLM Compiler"
+titleEn: "Four Core Agent Paradigms: ReAct, Plan-and-Execute, ReWOO, and LLM Compiler"
 description: "这篇文章深入探讨了Agent的四大核心范式..."
+descriptionEn: "A practical deep dive into four classic Agent paradigms—ReAct, Plan-and-Execute, ReWOO, and LLM Compiler—with flows, pseudocode, and a comparison table for when to use each."
 pubDate: 2026-08-12
 ---
 ## 1. 引言：Agent 为什么需要范式
@@ -191,3 +193,191 @@ LLM Compiler 则明确支持**复杂的依赖关系**，例如：`A → B`，`A 
 例如，LangChain 的 AgentExecutor 底层就是 ReAct，而 LangGraph 则允许你自由构建 Plan‑and‑Execute 或 LLM Compiler 风格的图。
 
 理解这些范式，不仅能帮你选择合适的框架，更能让你在设计自己的智能体时，**像编译器优化代码一样优化你的 Agent 执行流程**。
+
+<!-- i18n:en -->
+
+## 1. Why Agents Need Paradigms
+
+In real Agent systems the hard question is: **how can a model think, act, and still finish reliably and efficiently?**  
+Dumping a free-form task onto an LLM often yields messy reasoning, repeated tool calls, and lost direction.
+
+The industry settled on four classic paradigms that balance **reasoning vs action**, **plan vs execute**, **fewer LLM round-trips**, and **parallel decomposition**.
+
+| Paradigm | Core idea | One-liner |
+| --- | --- | --- |
+| **ReAct** | Alternate reason and act | Think a step, act a step — the classic Agent loop |
+| **Plan-and-Execute** | Plan first, then run | Build a full plan, then execute — great for complex work |
+| **ReWOO** | Reason without observation | Plan all tool calls up front — fewer LLM hops |
+| **LLM Compiler** | Parallel task graph | Compile a DAG and schedule like a compiler |
+
+## 2. ReAct: Alternate Reasoning and Acting
+
+ReAct (Reasoning + Acting) is the foundational pattern: **after each step, think about state, choose an action, observe, then think again.**  
+Think–act–observe mirrors how humans tackle unfamiliar problems—flexible and recoverable.
+
+### 2.1 Flow
+
+```mermaid
+flowchart TD
+  A["User question"] --> B["LLM produces Thought"]
+  B --> C{"Need a tool?"}
+  C -- Yes --> D["Run Action (tool)"]
+  D --> E["Get Observation"]
+  E --> B
+  C -- No --> F["Emit final answer"]
+```
+
+### 2.2 Pseudocode
+
+```python
+def react_agent(user_query):
+    while True:
+        # 1. 推理：让 LLM 根据历史与当前状态生成 Thought 和可能的 Action
+        thought, action = llm.generate_thought_and_action(user_query, history)
+        if action is None:
+            # 没有更多行动，直接输出最终回答
+            return thought
+        # 2. 行动：执行工具调用
+        observation = execute_tool(action)
+        # 3. 将观察结果追加到历史中，继续下一轮
+        history.append(f"Observation: {observation}")
+```
+
+### 2.3 Pros & Cons
+
+| Pros | Cons |
+| --- | --- |
+| Clear logic; easy to debug | One LLM call per tool step → **higher latency** |
+| Great for exploration / dynamic paths | Overthinks fixed pipelines |
+| Natural error recovery | Long jobs blow the context window |
+
+## 3. Plan-and-Execute: Plan First, Then Run
+
+For multi-stage work (“research report with collect → analyze → visualize”), ReAct’s step-by-step style gets expensive.  
+Plan-and-Execute borrows project management: **ask the LLM for a full plan, then let a lighter executor walk it.**
+
+### 3.1 Flow
+
+```mermaid
+flowchart TD
+  A["Complex user task"] --> B["Planner builds full plan (step list)"]
+  B --> C["Executor reads steps in order"]
+  C --> D{"Step needs a tool?"}
+  D -- Yes --> E["Call tool, collect result"]
+  E --> F["Feed result into next-step context"]
+  F --> C
+  D -- No --> G["Run step directly (e.g. write text)"]
+  G --> C
+  C --> H["All steps done → final output"]
+```
+
+### 3.2 Pseudocode
+
+```python
+def plan_and_execute_agent(user_query):
+    # 第一步：生成计划
+    plan = llm.create_plan(user_query)  # 返回一个步骤列表
+    context = {}
+    for step in plan:
+        if step.requires_tool:
+            # 执行器调用工具
+            result = execute_tool(step.action, context)
+            context.update(result)
+        else:
+            # 执行器直接生成文本或操作
+            result = llm.execute_step(step, context)
+            context.update(result)
+    return context["final_answer"]
+```
+
+### 3.3 Pros & Cons
+
+Planner and Executor may share a model or use different ones. Separation makes plans reusable, reviewable, and human-editable.
+
+## 4. ReWOO: Plan Once, Cut Redundant Hops
+
+ReWOO (Reason Without Observation) observes that **many tool calls do not depend on prior observations**—so you can plan them all, batch/parallel execute, then reason once.
+
+Like writing a shopping list before entering the store, instead of buying one item, going home, then returning.
+
+### 4.1 Flow
+
+```mermaid
+flowchart TD
+  A["User input"] --> B["Planner emits full Plan (tool placeholders)"]
+  B --> C["Worker runs all tool calls (parallel)"]
+  C --> D["Solver fills Observations into Plan → final answer"]
+```
+
+### 4.2 Pseudocode
+
+```python
+def rewoo_agent(user_query):
+    # 1. Planner 生成计划，里面用特殊符号标记工具调用，如 #E1 = search("xxx")
+    plan = llm.generate_plan_with_tool_placeholders(user_query)
+    # 2. Worker 解析计划，提取所有工具调用并批量执行
+    observations = resolve_all_tools(plan)
+    # 3. Solver 将观察结果替换回计划，生成最终回答
+    final_answer = llm.generate_final_answer(plan, observations)
+    return final_answer
+```
+
+### 4.3 Why Fewer LLM Calls
+
+ReAct may need 3 LLM turns for 3 tools.  
+ReWOO needs **2**: one plan, one final answer. Tools themselves can run in parallel.
+
+## 5. LLM Compiler: Parallel Task Graphs
+
+LLM Compiler is the aggressive end: treat the task like **compiler IR**—parse into a **DAG**, find parallel nodes, schedule once.
+
+### 5.1 Flow
+
+```mermaid
+flowchart TD
+  A["User task"] --> B["Compiler builds DAG (call graph)"]
+  B --> C["Find parallelizable nodes"]
+  C --> D["Parallel Executor runs independent subgraphs"]
+  D --> E["Merge results; continue dependent nodes"]
+  E --> F["All nodes done → final result"]
+```
+
+### 5.2 Pseudocode (simplified)
+
+```python
+def llm_compiler_agent(user_query):
+    # 1. Compiler 生成 DAG
+    dag = llm.generate_dag(user_query)  # 节点为函数调用，边为依赖关系
+    # 2. 并行执行
+    results = parallel_execute(dag)  # 内置依赖分析，自动并发
+    # 3. 最终合并
+    final_answer = llm.merge_results(results)
+    return final_answer
+```
+
+### 5.3 Vs ReWOO
+
+ReWOO can parallelize tools but plans are still a **linear list** of independent calls.  
+LLM Compiler models **real dependencies** (`A→B`, `A→C`, `B∧C→D`) for higher parallelism.
+
+## 6. Comparison
+
+| Paradigm | Pattern | LLM hops | Parallelism | Best for |
+| --- | --- | --- | --- | --- |
+| **ReAct** | Think–act–observe | High (per step) | None | Exploratory / single-step decisions |
+| **Plan-and-Execute** | Plan then sequential run | Medium | None | Structured, auditable workflows |
+| **ReWOO** | One-shot plan, batch tools | Low (2) | Tool-level | Independent tool calls; latency/cost sensitive |
+| **LLM Compiler** | DAG schedule | Low (2–3) | Graph-level | Complex dependencies; high throughput |
+
+### 6.1 Choosing
+
+- Path depends on intermediate results → **ReAct**
+- Clear steps, want auditable plans → **Plan-and-Execute**
+- Latency/cost first, tools independent → **ReWOO**
+- Huge interdependent batch work → **LLM Compiler**
+
+## 7. Closing
+
+These paradigms compose. LangChain’s AgentExecutor is ReAct-shaped; LangGraph lets you build Plan-and-Execute or Compiler-style graphs.
+
+Understanding them helps you pick frameworks—and design Agents the way compilers optimize code: **optimize the execution plan, not just the prompt.**

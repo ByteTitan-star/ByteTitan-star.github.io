@@ -1,6 +1,9 @@
 ---
+
 title: "Harness Engineering 基石：构建 LLM 应用可追溯性——LangSmith、Langfuse 与 Sentry 深度解析"
+titleEn: "Harness Engineering Foundations: Building LLM App Traceability — Deep Dive into LangSmith, Langfuse, and Sentry"
 description: "当软件从确定性进入概率时代，可追溯性成为驾驭 LLM 的基石。本文深度解析 LangSmith、Langfuse、Sentry 铁三角组合，分别覆盖开发调试、生产观测与异常归因，构建完整的 LLM 应用可追溯性体系。"
+descriptionEn: "As software moves from deterministic to probabilistic systems, traceability becomes the foundation for harnessing LLMs. This article deep-dives into the LangSmith, Langfuse, and Sentry triad—covering development debugging, production observability, and exception attribution—to build a complete LLM application traceability stack."
 pubDate: 2026-08-12
 ---
 
@@ -298,3 +301,72 @@ Harness Engineering 的本质是承认不可控，然后通过工程手段建立
 而 LangSmith、Langfuse 与 Sentry，正是你实现这一目标的、值得信赖的伙伴。
 
 ---
+
+
+<!-- i18n:en -->
+
+
+# Harness Engineering Foundations: LLM App Traceability with LangSmith, Langfuse, and Sentry
+
+> As software shifts from deterministic logic to probabilistic generation, we are no longer only “debugging code”—we are steering models.  
+> **Harness Engineering** treats LLM applications as complex systems to govern, not features to slap together.  
+> Governance starts with **traceability**: every inference path, every dollar of cost, every failure cause must be visible.  
+> This article unpacks how LangSmith, Langfuse, and Sentry cover development, production, and exception attribution as one stack.
+
+## 1. Why Traceability Is the Harness
+
+LLM apps fail in new ways: silent quality regressions, tool-call storms, prompt drift, and cost spikes without a stack trace that classic APM understands. Without traces/spans for prompts, retrieval, tools, and model I/O, you cannot reproduce or improve.
+
+## 2. The Triad
+
+| Layer | Tool | Primary job |
+| --- | --- | --- |
+| Dev debugging | **LangSmith** | Dataset runs, prompt diffs, step-level traces while building |
+| Prod observability | **Langfuse** | Self-hostable tracing, scores, cost/latency dashboards |
+| Exception attribution | **Sentry** | Error grouping, release health, user impact for the non-LLM periphery |
+
+Use them together: LangSmith for iteration speed, Langfuse for continuous prod truth, Sentry for crashes and infrastructure faults around the model path.
+
+## 3. LangSmith in Development
+
+Capture nested runs (chain → retriever → LLM → tool). Attach datasets and evaluators. Compare prompt versions on the same cases before you ship. Treat traces as the unit of debugging—not log lines alone.
+
+## 4. Langfuse in Production
+
+Open-source friendly tracing with scores (user feedback / LLM judges), token cost, and latency histograms. Sample wisely at high QPS; keep PII redaction policies explicit. Feed online negatives back into eval sets (see the Agent Evaluation article).
+
+## 5. Sentry for the Edges
+
+Model calls can “succeed” HTTP-wise while business logic throws. Sentry still owns unhandled exceptions, release regressions, and performance transactions for API/gateway layers. Correlate `trace_id` across Langfuse and Sentry where possible.
+
+## 6. A Practical Wiring Pattern
+
+1. Instrument every LLM/tool span with a shared request id  
+2. Record prompts/outputs with redaction  
+3. Score critical paths (faithfulness / task success)  
+4. Alert on error rate, P99 latency, and cost anomalies  
+5. Close the loop: prod failure → dataset case → LangSmith re-run → fix → release  
+
+## 7. Closing
+
+Harness Engineering is not a dashboard fad—it is how you keep probabilistic systems under control. LangSmith, Langfuse, and Sentry each cover a blind spot; together they make LLM apps operable.
+
+> Keep any code/config samples from the Chinese section unchanged; diagrams and narrative above follow the English UI language.
+
+<!-- en-code-sync -->
+
+## Appendix: Code & diagrams from the article
+
+The English narrative above is localized for the language toggle. The following fenced blocks are copied unchanged from the Chinese version so you can still copy-paste every command and snippet while reading in English.
+
+```text
+            用户请求
+               |
+        [ LLM 应用服务 ]
+          /      |      \
+    SDK 调用  SDK 上报  异常抛出
+    (回调)    (异步)     (捕获)
+      |         |         |
+   LangSmith   Langfuse   Sentry
+  (实验/调试) (生产观测)  (错误追踪)
+```

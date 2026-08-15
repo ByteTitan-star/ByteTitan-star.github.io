@@ -1,6 +1,8 @@
 ---
 title: "RAG Basics：从入门到落地，一篇搞定检索增强生成"
+titleEn: "RAG Basics: From First Principles to Production"
 description: "RAG 是 LLM 应用落地最关键的工程能力。本文从索引分块策略、Embedding 模型选型、多路召回、Reranker 重排序，到生成阶段幻觉抑制与端到端评估，系统拆解 RAG 全链路的工程实践与落地陷阱。"
+descriptionEn: "RAG is the key engineering skill for LLM apps. This note covers chunking, embeddings, hybrid recall, rerankers, grounded generation, and evaluation pitfalls."
 pubDate: 2026-08-12
 ---
 
@@ -424,3 +426,256 @@ RAG 不是一个静态的技术，而是一个持续进化的工程系统。它�
 展望未来，RAG 的发展方向将围绕三个维度展开：一是**多模态 RAG**，让图像、音频、视频与文本检索深度融合；二是**Agentic RAG**，让 RAG 系统具备主动规划、多轮检索与自我验证的能力，而非单次被动响应；三是**轻量化与实时化**，通过边缘部署、量化压缩和流式检索，让 RAG 在端侧设备上低延迟运行。
 
 无论技术如何演进，RAG 的本质始终是让 LLM “有据可依”。在“幻觉”被彻底解决之前，RAG 仍将是 LLM 应用走向生产可靠性的必经之路。
+
+
+<!-- i18n:en -->
+
+
+# RAG Basics: From First Principles to Production
+
+> RAG (Retrieval-Augmented Generation) is both underrated and overhyped. Underrated because people treat it as “just look stuff up.” Overhyped because great RAG teams are rare—retrieval quality, context packing, hallucinations, and end-to-end latency all hide sharp edges. This article walks the full chain so you move from “knowing RAG” to “shipping RAG.”
+
+---
+
+## 1. Why RAG Exists
+
+### 1.1 LLM limits
+
+- **Knowledge cutoff**
+- **Hallucinations** when uncertain
+- **No private knowledge** without injection
+
+### 1.2 Core idea
+
+**Retrieve first, then generate.** Turn the model from a memory machine into a reading-comprehension machine.
+
+1. **Indexing** — chunk & embed the corpus  
+2. **Retrieval** — recall Top-K passages  
+3. **Generation** — stuff context into the prompt and answer  
+
+```mermaid
+flowchart LR
+    A[User question] --> B[Retriever]
+    B --> C[Vector DB]
+    C --> D[Top-K docs]
+    D --> E[Context assembly]
+    E --> F[LLM generation]
+    F --> G[Answer]
+    
+    H[Knowledge docs] --> I[Chunking]
+    I --> J[Embedding]
+    J --> C
+```
+
+### 1.3 RAG vs fine-tuning
+
+Prefer **RAG first**; fine-tune as a complement (style/format). RAG updates instantly and cites sources; fine-tuning is slower/costlier and more opaque.
+
+| Dimension | RAG | Fine-tuning |
+| --- | --- | --- |
+| Knowledge updates | Immediate (swap docs) | Retrain |
+| Explainability | Citations | Opaque |
+| Hallucination risk | Lower with good context | Higher free-form risk |
+| Cost to start | Lower | Higher |
+| Best for | Knowledge QA / support / docs | Style, format, domain jargon |
+
+## 2. Indexing Sets the Ceiling
+
+Garbage in, garbage out. Focus on loaders that keep structure (titles, pages, tables), chunking policy (size/overlap/structure-aware), and embedding choice (domain language, dimension, latency).
+
+Keep code samples from the Chinese section unchanged (`RecursiveCharacterTextSplitter`, embedding APIs, etc.).
+
+## 3. Retrieval: Multi-Path + Rerank
+
+Combine dense vectors with sparse/keyword (BM25) when queries are lexical. Always consider a **reranker** after Top-K—vector recall is coarse; cross-encoders refine.
+
+## 4. Generation: Fight Hallucinations
+
+Cite contexts, constrain prompts (“answer only from provided docs”), add refusal behavior when evidence is weak, and evaluate faithfulness/relevancy.
+
+## 5. Evaluation & Ops
+
+Track Hit Rate / MRR / context precision-recall, faithfulness, latency, and cost. Version corpora and eval sets together. Monitor online thumbs and retrieval drift after KB updates.
+
+## 6. Closing
+
+RAG is an engineering system, not a single API call. Index quality, hybrid retrieval, rerank, grounded generation, and continuous eval are the difference between a demo and a product.
+
+> Diagrams above are English; all executable code blocks remain identical to the Chinese version for copy-paste fidelity.
+
+<!-- en-code-sync -->
+
+## Appendix: Code & diagrams from the article
+
+The English narrative above is localized for the language toggle. The following fenced blocks are copied unchanged from the Chinese version so you can still copy-paste every command and snippet while reading in English.
+
+```mermaid
+flowchart LR
+    A[用户提问] --> B[检索模块]
+    B --> C[向量数据库]
+    C --> D[召回Top-K文档]
+    D --> E[上下文拼接]
+    E --> F[LLM生成]
+    F --> G[输出答案]
+    
+    H[知识库文档] --> I[分块 Chunking]
+    I --> J[向量化 Embedding]
+    J --> C
+```
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=512,        # 每个 Chunk 最大 Token 数
+    chunk_overlap=50,      # 重叠 Token 数，保持上下文连续
+    separators=["\n\n", "\n", "。", ".", " "],  # 优先按语义边界切分
+)
+chunks = text_splitter.split_text(document)
+```
+```python
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+def semantic_chunk(sentences, threshold=0.6):
+    embeds = model.encode(sentences)
+    chunks, current_chunk = [], [sentences[0]]
+    for i in range(1, len(sentences)):
+        sim = cosine_similarity(embeds[i-1:i], embeds[i:i+1])[0][0]
+        if sim > threshold:
+            current_chunk.append(sentences[i])
+        else:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [sentences[i]]
+    return chunks
+```
+```python
+def multi_stage_recall(query, top_k=10):
+    # 1. 向量召回
+    vec_results = vector_db.search(query, top_k=top_k)
+    
+    # 2. BM25 关键词召回
+    bm25_results = bm25_index.search(query, top_k=top_k)
+    
+    # 3. 合并结果并去重
+    all_results = merge_and_deduplicate(vec_results, bm25_results)
+    
+    # 4. 重排序 Reranker 重新打分
+    reranked = reranker.rerank(query, all_results, top_k=5)
+    return reranked
+```
+```python
+from sentence_transformers import CrossEncoder
+
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+def rerank(query, documents, top_k=5):
+    pairs = [[query, doc] for doc in documents]
+    scores = reranker.predict(pairs)
+    ranked = sorted(zip(documents, scores), key=lambda x: x[1], reverse=True)
+    return [doc for doc, score in ranked[:top_k]]
+```
+```python
+def rrf(results_lists, k=60):
+    """
+    results_lists: 多个召回通道的结果列表，每个列表按相关性降序排列
+    """
+    scores = {}
+    for rank_list in results_lists:
+        for rank, doc_id in enumerate(rank_list):
+            scores[doc_id] = scores.get(doc_id, 0) + 1.0 / (k + rank + 1)
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+```
+```text
+你是一个基于给定资料回答问题的助手。你必须严格依据以下参考资料回答。
+如果资料中没有答案，请直接说“我不知道”，不要自行编造。
+
+参考资料：
+{retrieved_context}
+
+用户问题：{query}
+
+回答要求：
+1. 优先从参考资料中提取信息
+2. 如果参考资料中存在矛盾，请指出并说明
+3. 引用来源时标注 [来源：文档名]
+4. 如果信息不完整，明确说明缺失了什么
+```
+```python
+from ragas.metrics import faithfulness
+from ragas import evaluate
+
+# 生成答案后自动评估忠实度
+faithfulness_score = evaluate(
+    dataset,
+    metrics=[faithfulness]
+)
+# 如果分数低于阈值，降级为"根据现有资料无法可靠回答"
+if faithfulness_score < 0.7:
+    return "根据当前资料，我无法给出可靠的答案，建议人工确认。"
+```
+```python
+from typing import Optional
+from pydantic import BaseModel
+
+class SearchQuery(BaseModel):
+    query_text: str           # 语义检索文本
+    author: Optional[str]     # 过滤条件：作者
+    date_range: Optional[str] # 过滤条件：时间范围
+    category: Optional[str]   # 过滤条件：分类
+
+# 用 LLM 将用户输入解析为结构化的 SearchQuery
+# 例如用户输入："2024年关于Transformer的论文"
+# 解析结果：query_text="Transformer 论文", date_range="2024"
+```
+```python
+def rewrite_query(original_query: str, conversation_history: list = None) -> str:
+    """
+    使用 LLM 改写用户问题，补全指代、规范化表述
+    """
+    prompt = f"""
+    请将以下用户问题改写为更清晰、关键词明确的检索查询。
+    保留所有关键实体和条件，补全可能缺失的指代信息。
+    
+    原始问题：{original_query}
+    对话历史：{conversation_history}
+    
+    只输出改写后的查询文本：
+    """
+    return llm.generate(prompt)
+```
+```mermaid
+flowchart TD
+    A[用户问题] --> B[第一轮检索]
+    B --> C[生成初步答案/关键词]
+    C --> D[提取缺失信息实体]
+    D --> E[第二轮检索]
+    E --> F[综合多轮结果生成最终答案]
+```
+```mermaid
+flowchart LR
+    subgraph 索引流水线
+        A[文档上传] --> B[格式解析]
+        B --> C[分块 Chunking]
+        C --> D[向量化 Embedding]
+        D --> E[向量数据库写入]
+    end
+    
+    subgraph 在线服务
+        F[用户 Query] --> G[Query 改写/扩展]
+        G --> H[向量检索]
+        H --> I[Reranker 重排序]
+        I --> J[上下文拼接]
+        J --> K[LLM 生成]
+        K --> L[后处理/校验]
+        L --> M[返回答案]
+    end
+    
+    subgraph 持续改进
+        N[用户反馈] --> O[Bad Case 收集]
+        O --> P[回放评估]
+        P --> Q[策略优化]
+        Q -.->|迭代| C
+        Q -.->|迭代| H
+    end
+```

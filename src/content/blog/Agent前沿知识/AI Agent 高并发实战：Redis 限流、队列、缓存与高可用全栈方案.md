@@ -1,6 +1,9 @@
 ---
-title: "I Agent 高并发实战：Redis 限流、队列、缓存与高可用全栈方案"
+
+title: "AI Agent 高并发实战：Redis 限流、队列、缓存与高可用全栈方案"
+titleEn: "AI Agent High-Concurrency in Practice: Redis Rate Limiting, Queues, Caching, and High Availability"
 description: "高并发是 Agent 上线的第一道坎。本文从网关限流、Redis Streams 异步解耦、缓存穿透/击穿/雪崩防护，到分布式锁与哨兵高可用，全链路拆解一套可落地的 Python 高并发架构方案。"
+descriptionEn: "High concurrency is the first hurdle when shipping an Agent. This article walks through gateway rate limiting, Redis Streams async decoupling, cache penetration/breakdown/avalanche defenses, distributed locks, and Sentinel HA—an end-to-end, production-ready Python architecture."
 pubDate: 2026-08-12
 ---
 # AI Agent 高并发实战：Redis 限流、队列、缓存与高可用全栈方案
@@ -690,3 +693,541 @@ Agent 高并发的核心思路就是**分层拦截、异步解耦、读写分离
 - Cache-Aside 模式下为什么删除缓存而不是更新。
 
 掌握了这些，无论是 Python 生态的 Agent 项目还是其他高并发系统，你都能游刃有余。如果本文对你有帮助，欢迎点赞、收藏、转发，让更多开发者看到。有任何疑问欢迎评论区交流，我们一起进步！
+
+
+<!-- i18n:en -->
+
+
+# AI Agent High-Concurrency Practice: Redis Rate Limiting, Queues, Caching, and HA
+
+> Agents graduate from toys to productivity tools—then concurrency hits first. Burst uploads, parallel LLM calls, and progress polling can melt a naive DB. This article walks a real Agent evolution: **gateway limits, Redis Streams decoupling, cache defenses, distributed locks, and Sentinel HA**, with Python-oriented patterns you can ship.
+
+## 1. The Real Pain
+
+Imagine a document-analysis Agent: upload PDF → summarize → extract → report. Feature-simple, load-fragile. Synchronous LLM work on the request thread collapses under concurrent users.
+
+## 2. Architecture Outline
+
+```mermaid
+flowchart TD
+    A[Client] --> B[API Gateway / Rate limit]
+    B --> C[FastAPI app]
+    C --> D[Redis Streams queue]
+    D --> E[Worker pool]
+    E --> F[LLM / tools]
+    C --> G[Redis cache]
+    C --> H[Postgres]
+    G --> H
+    I[Sentinel / replicas] -.-> G
+    I -.-> D
+```
+
+Split **accept work** from **do work**. The API enqueues; workers consume.
+
+## 3. Gateway Rate Limiting
+
+Protect with token bucket / sliding window (Redis). Return 429 early. Separate limits for anonymous vs authenticated, and for expensive endpoints (upload/analyze) vs cheap status polls.
+
+## 4. Redis Streams as the Async Backbone
+
+Use Streams (or equivalent) for durable task queues: consumer groups, ACK, pending entries, retry/DLQ. Persist task state (`queued → running → succeeded/failed`) so clients poll safely.
+
+Keep the Python snippets in the Chinese section as the canonical copy-paste code—only the surrounding explanation is localized here.
+
+## 5. Cache: Penetration, Breakdown, Avalanche
+
+- **Penetration**: missing keys hammer DB → bloom filter / cached nulls  
+- **Breakdown**: hot key expiry → mutex / logical expire  
+- **Avalanche**: many keys expire together → jitter TTLs  
+
+Cache task results and idempotent LLM responses carefully (key by content hash + model/version).
+
+## 6. Distributed Locks
+
+Serialize critical sections (e.g. “finalize report once”) with Redis locks + fencing tokens; always set TTL; prefer libraries that renew safely.
+
+## 7. High Availability
+
+Sentinel or managed Redis for failover; connection pools with timeouts; graceful worker shutdown (stop claiming new messages, finish in-flight). Multi-AZ for Postgres; backpressure when queue depth spikes.
+
+## 8. Closing
+
+High concurrency for Agents is systems work: **admit, queue, cache, lock, fail over**. Redis is often the hub—not because it is trendy, but because it can be the rate limiter, queue, cache, and lock service in one operable plane.
+
+> Mermaid labels above are English. All executable code blocks remain identical to the Chinese article for fidelity.
+
+<!-- en-code-sync -->
+
+## Appendix: Code & diagrams from the article
+
+The English narrative above is localized for the language toggle. The following fenced blocks are copied unchanged from the Chinese version so you can still copy-paste every command and snippet while reading in English.
+
+```mermaid
+flowchart LR
+  A["客户端请求"] --> B["网关限流（令牌桶）"]
+  B --> C{"请求类型"}
+  C -->|读请求| D["Redis 缓存"]
+  D -->|未命中| E["MySQL"]
+  C -->|写请求/任务提交| F["Redis Streams 消息队列"]
+  F --> G["Worker 异步消费"]
+  G --> H["更新 DB 和缓存"]
+  H --> I["SSE/轮询通知用户"]
+```
+```lua
+-- ratelimit.lua
+local key = KEYS[1]              -- 限流Key，如 "rate_limit:agent_api"
+local capacity = tonumber(ARGV[1]) -- 桶容量
+local rate = tonumber(ARGV[2])     -- 每秒生成令牌数
+local now = tonumber(ARGV[3])      -- 当前时间戳(毫秒)
+local requested = tonumber(ARGV[4])-- 请求令牌数，通常为1
+
+-- 获取上次填充时间和当前令牌数
+local bucket = redis.call("hmget", key, "tokens", "last_time")
+local tokens = tonumber(bucket[1])
+local last_time = tonumber(bucket[2])
+
+-- 初始化
+if tokens == nil then
+    tokens = capacity
+    last_time = now
+end
+
+-- 计算经过时间，补充令牌
+local elapsed = math.max(now - last_time, 0)
+local new_tokens = math.floor(elapsed * rate / 1000) -- 按毫秒计算
+tokens = math.min(capacity, tokens + new_tokens)
+last_time = now
+
+-- 判断是否足够
+if tokens >= requested then
+    tokens = tokens - requested
+    redis.call("hmset", key, "tokens", tokens, "last_time", last_time)
+    return 1 -- 通过
+else
+    redis.call("hmset", key, "tokens", tokens, "last_time", last_time)
+    return 0 -- 限流
+end
+```
+```python
+import redis
+import time
+
+r = redis.Redis()
+
+def is_limited(key, capacity=1000, rate=500):
+    """返回 True 表示被限流，False 表示放行"""
+    now = int(time.time() * 1000)
+    script = """
+    -- 此处插入上面的 Lua 脚本内容 --
+    """
+    lua_func = r.register_script(script)
+    result = lua_func(keys=[key], args=[capacity, rate, now, 1])
+    return result == 0   # 0 表示限流
+```
+```python
+# Producer
+r.lpush("task_queue", task_json)
+# Consumer
+task_json = r.rpop("task_queue")   # 消息立即被删除
+```
+```python
+# 添加消息
+r.xadd("mystream", {"task": "report_123", "user_id": "456"})
+# 消费者组读取
+r.xreadgroup("mygroup", "consumer1", {"mystream": ">"}, count=1)
+```
+```python
+r.xack("mystream", "mygroup", msg_id)
+```
+```python
+# 查看 pending 列表
+pending = r.xpending("mystream", "mygroup")
+# 认领超过 60 秒未处理的消息
+r.xclaim("mystream", "mygroup", "consumer2", min_idle_time=60000, message_ids=[msg_id])
+```
+```mermaid
+stateDiagram-v2
+  [*] --> QUEUED: 任务提交
+  QUEUED --> PROCESSING: Worker 消费
+  PROCESSING --> COMPLETED: 成功
+  PROCESSING --> FAILED: 异常
+  COMPLETED --> [*]
+  FAILED --> [*]
+```
+```python
+import uuid
+import redis
+
+r = redis.Redis(decode_responses=True)
+
+async def submit_task(file_url: str):
+    task_id = uuid.uuid4().hex
+    # 写入 Streams
+    r.xadd("agent:tasks", {"taskId": task_id, "fileUrl": file_url})
+    # 初始化状态 Hash
+    r.hset(f"task:status:{task_id}", mapping={"status": "QUEUED"})
+    return {"task_id": task_id}
+```
+```python
+import redis
+from redis.exceptions import ResponseError
+
+r = redis.Redis(decode_responses=True)
+
+# 创建消费者组（只需运行一次）
+try:
+    r.xgroup_create("agent:tasks", "group_agent", id="0", mkstream=True)
+except ResponseError as e:
+    if "BUSYGROUP" in str(e):
+        pass
+
+def process_message(msg_id, msg_data):
+    task_id = msg_data["taskId"]
+    # 更新状态为 PROCESSING
+    r.hset(f"task:status:{task_id}", "status", "PROCESSING")
+    try:
+        # ---------- 执行 Agent 逻辑 ----------
+        # 例如：调用大模型、生成报告等
+        # do_agent_work(msg_data["fileUrl"])
+        # ---------- 完成 ----------
+        # 写 DB、回写缓存等操作...
+        r.hset(f"task:status:{task_id}", "status", "COMPLETED")
+    except Exception:
+        r.hset(f"task:status:{task_id}", "status", "FAILED")
+    finally:
+        # 确认消息
+        r.xack("agent:tasks", "group_agent", msg_id)
+
+# 持续消费
+while True:
+    try:
+        records = r.xreadgroup(
+            "group_agent", "worker1",
+            streams={"agent:tasks": ">"},
+            count=1, block=2000
+        )
+        for stream_name, messages in records:
+            for msg_id, msg_data in messages:
+                process_message(msg_id, msg_data)
+    except Exception as e:
+        # 记录异常，继续循环
+        print(f"Worker error: {e}")
+```
+```mermaid
+flowchart TD
+  subgraph Read["读流程"]
+    A["读请求"] --> B{"缓存命中?"}
+    B -->|是| C["返回缓存数据"]
+    B -->|否| D["查询数据库"]
+    D --> E["写入缓存"]
+    E --> C
+  end
+  subgraph Write["写流程"]
+    F["写请求"] --> G["更新数据库"]
+    G --> H["删除缓存"]
+    H --> I["返回"]
+  end
+```
+```python
+  from pybloom_live import BloomFilter
+  bf = BloomFilter(capacity=1000000, error_rate=0.001)
+  # 初始化：将所有已有 task_id 加入布隆
+  for task_id in existing_ids:
+      bf.add(task_id)
+  
+  def query_task(task_id):
+      if task_id not in bf:
+          return None   # 直接拒绝
+      # 继续后续缓存/DB 查询...
+  ```
+```python
+  data = r.get(f"task:{task_id}")
+  if data == "NULL":
+      return None
+  if data is None:
+      db_data = db.query(task_id)
+      if db_data is None:
+          r.setex(f"task:{task_id}", 30, "NULL")
+          return None
+      r.setex(f"task:{task_id}", 3600, json.dumps(db_data))
+      return db_data
+  return json.loads(data)
+  ```
+```python
+import redis
+import time
+import uuid
+
+r = redis.Redis(decode_responses=True)
+
+def get_task_result(task_id: str):
+    # 1. 查缓存
+    cache = r.get(f"task:{task_id}")
+    if cache:
+        return json.loads(cache)
+    
+    lock_key = f"lock:task:{task_id}"
+    lock_value = uuid.uuid4().hex
+    # 2. 尝试加锁（SET NX EX）
+    acquired = r.set(lock_key, lock_value, nx=True, ex=10)
+    if acquired:
+        try:
+            # 双重检查
+            cache = r.get(f"task:{task_id}")
+            if cache:
+                return json.loads(cache)
+            # 查 DB
+            db_data = db.query(task_id)
+            if db_data:
+                r.setex(f"task:{task_id}", 3600, json.dumps(db_data))
+            return db_data
+        finally:
+            # Lua 解锁
+            unlock_script = """
+            if redis.call("get", KEYS[1]) == ARGV[1] then
+                return redis.call("del", KEYS[1])
+            else
+                return 0
+            end
+            """
+            unlock = r.register_script(unlock_script)
+            unlock(keys=[lock_key], args=[lock_value])
+    else:
+        # 未获取锁，等待一小段时间后重试或返回旧值
+        time.sleep(0.05)
+        return get_task_result(task_id)  # 简单重试
+```
+```python
+  import random
+  expire = 3600 + random.randint(0, 300)  # 3600~3900 秒
+  r.setex(key, expire, value)
+  ```
+```python
+import uuid
+import redis
+
+r = redis.Redis(decode_responses=True)
+
+def acquire_lock(lock_name, expire_sec=30):
+    lock_key = f"lock:{lock_name}"
+    lock_val = uuid.uuid4().hex
+    acquired = r.set(lock_key, lock_val, nx=True, ex=expire_sec)
+    if acquired:
+        return lock_val
+    return None
+
+def release_lock(lock_name, lock_val):
+    lock_key = f"lock:{lock_name}"
+    unlock_script = """
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+        return redis.call("del", KEYS[1])
+    else
+        return 0
+    end
+    """
+    unlock = r.register_script(unlock_script)
+    unlock(keys=[lock_key], args=[lock_val])
+```
+```python
+import threading
+
+class RedisLockWithWatchdog:
+    def __init__(self, r, lock_name, expire=30):
+        self.r = r
+        self.lock_key = f"lock:{lock_name}"
+        self.lock_val = uuid.uuid4().hex
+        self.expire = expire
+        self._running = False
+        self._watchdog_thread = None
+
+    def acquire(self, blocking=True, timeout=None):
+        # 简化版：只非阻塞尝试一次
+        acquired = self.r.set(self.lock_key, self.lock_val, nx=True, ex=self.expire)
+        if acquired:
+            self._start_watchdog()
+            return True
+        return False
+
+    def _start_watchdog(self):
+        self._running = True
+        self._watchdog_thread = threading.Thread(target=self._renew, daemon=True)
+        self._watchdog_thread.start()
+
+    def _renew(self):
+        while self._running:
+            # 每隔 expire/3 秒续期一次
+            time.sleep(self.expire / 3)
+            # 检查锁是否仍被自己持有
+            current_val = self.r.get(self.lock_key)
+            if current_val == self.lock_val:
+                self.r.expire(self.lock_key, self.expire)
+            else:
+                break  # 锁已经被释放或过期
+
+    def release(self):
+        self._running = False
+        # Lua 解锁
+        script = """
+        if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+        else
+            return 0
+        end
+        """
+        unlock = self.r.register_script(script)
+        unlock(keys=[self.lock_key], args=[self.lock_val])
+```
+```python
+from redis.sentinel import Sentinel
+
+sentinel = Sentinel([('sentinel1', 26379), ('sentinel2', 26379), ('sentinel3', 26379)],
+                    socket_timeout=0.1)
+# 获取主节点连接（写）
+master = sentinel.master_for('mymaster', socket_timeout=0.1, decode_responses=True)
+# 获取从节点连接（读）
+slave = sentinel.slave_for('mymaster', socket_timeout=0.1, decode_responses=True)
+
+# 写操作使用 master
+master.set("key", "value")
+# 读操作使用 slave
+value = slave.get("key")
+```
+```mermaid
+flowchart TD
+  A["哨兵判定主节点主观下线 SDOWN"] --> B["达到 quorum 客观下线 ODOWN"]
+  B --> C["选举新主：优先级、偏移量、runid"]
+  C --> D["向新主发送 REPLICAOF NO ONE"]
+  D --> E["其他从节点复制新主"]
+  E --> F["通知客户端 +switch-master"]
+```
+```python
+  import threading
+  def update_and_delete_cache(task_id, new_data):
+      r.delete(f"task:{task_id}")          # 第一次删除
+      db.update(task_id, new_data)
+      # 延迟 0.5 秒第二次删除（异步）
+      threading.Timer(0.5, lambda: r.delete(f"task:{task_id}")).start()
+  ```
+```python
+# 示例：使用 pymysqlreplication 监听 binlog
+from pymysqlreplication import BinLogStreamReader
+from pymysqlreplication.row_event import WriteRowsEvent, UpdateRowsEvent, DeleteRowsEvent
+
+stream = BinLogStreamReader(connection_settings={"host": "127.0.0.1", "port": 3306, ...},
+                            server_id=100, only_events=[WriteRowsEvent, ...])
+for binlogevent in stream:
+    for row in binlogevent.rows:
+        if isinstance(binlogevent, DeleteRowsEvent):
+            # 删除对应缓存
+            r.delete(f"task:{row['values']['id']}")
+        # ... 处理其他事件
+```
+```python
+import uuid
+import json
+import redis
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+app = FastAPI()
+r = redis.Redis(decode_responses=True)
+
+# 布隆过滤器（伪代码，实际需初始化）
+# bf = BloomFilter(...)
+
+class TaskReq(BaseModel):
+    file_url: str
+
+@app.post("/agent/task")
+async def submit_task(req: TaskReq):
+    # 1. 限流（可在此处调用前面实现的 is_limited 函数）
+    # if is_limited("agent_submit", 1000, 500):
+    #     raise HTTPException(status_code=429, detail="系统繁忙，请稍后重试")
+    
+    task_id = uuid.uuid4().hex
+    # 写入 Streams
+    r.xadd("agent:tasks", {"taskId": task_id, "fileUrl": req.file_url})
+    r.hset(f"task:status:{task_id}", mapping={"status": "QUEUED"})
+    return {"task_id": task_id}
+
+@app.get("/agent/task/{task_id}")
+async def query_task(task_id: str):
+    # 布隆过滤拦截不存在 ID（可选）
+    # if task_id not in bf:
+    #     raise HTTPException(status_code=404, detail="任务不存在")
+    
+    # 查缓存
+    status = r.hgetall(f"task:status:{task_id}")
+    if status:
+        return status
+    
+    # 缓存击穿保护：互斥锁回填
+    lock_key = f"lock:task_query:{task_id}"
+    lock_val = uuid.uuid4().hex
+    acquired = r.set(lock_key, lock_val, nx=True, ex=5)
+    if acquired:
+        try:
+            status = r.hgetall(f"task:status:{task_id}")
+            if status:
+                return status
+            # 查 DB（示例使用 MySQL 或 PostgreSQL）
+            # db_data = await db.fetch_one(...)
+            # if db_data:
+            #     r.hset(f"task:status:{task_id}", mapping=dict(db_data))
+            #     return db_data
+            # 缓存空值防穿透
+            r.setex(f"task:null:{task_id}", 30, "NULL")
+            raise HTTPException(status_code=404, detail="任务不存在")
+        finally:
+            # Lua 解锁
+            unlock_script = """
+            if redis.call("get", KEYS[1]) == ARGV[1] then
+                return redis.call("del", KEYS[1])
+            else
+                return 0
+            end
+            """
+            unlock = r.register_script(unlock_script)
+            unlock(keys=[lock_key], args=[lock_val])
+    else:
+        # 未获取锁，稍后重试或返回旧数据
+        raise HTTPException(status_code=202, detail="数据加载中，请稍后")
+```
+```python
+import redis
+from redis.exceptions import ResponseError
+import time
+
+r = redis.Redis(decode_responses=True)
+
+try:
+    r.xgroup_create("agent:tasks", "group_agent", id="0", mkstream=True)
+except ResponseError as e:
+    if "BUSYGROUP" not in str(e):
+        raise
+
+def handle_task(msg_id, data):
+    task_id = data["taskId"]
+    r.hset(f"task:status:{task_id}", "status", "PROCESSING")
+    try:
+        # Agent 核心逻辑：文件分析、大模型调用等
+        # result = analyze_document(data["fileUrl"])
+        time.sleep(2)  # 模拟耗时
+        # 处理完成，更新 DB 和缓存
+        r.hset(f"task:status:{task_id}", mapping={"status": "COMPLETED", "result": "..."})
+    except Exception as e:
+        r.hset(f"task:status:{task_id}", "status", "FAILED")
+    finally:
+        r.xack("agent:tasks", "group_agent", msg_id)
+
+while True:
+    try:
+        streams = r.xreadgroup("group_agent", f"worker-{os.getpid()}",
+                               {"agent:tasks": ">"}, count=1, block=2000)
+        for stream, messages in streams:
+            for msg_id, data in messages:
+                handle_task(msg_id, data)
+    except Exception as e:
+        print(f"Error: {e}")
+        time.sleep(1)
+```

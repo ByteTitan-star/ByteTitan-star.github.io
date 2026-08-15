@@ -11,11 +11,9 @@ interface Props {
   updatedDate?: Date;
   tags?: string[];
   kind: 'Blog' | 'Note';
-  headings?: { depth: number; slug: string; text: string }[];
 }
 
-const { title, titleEn, description, descriptionEn, pubDate, updatedDate, tags = [], kind, headings = [] } = Astro.props;
-const visibleHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const { title, titleEn, description, descriptionEn, pubDate, updatedDate, tags = [], kind } = Astro.props;
 const fmt = (date: Date) => date.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const displayTitleEn = titleEn ?? title;
 const displayDescriptionEn = descriptionEn ?? description;
@@ -41,12 +39,10 @@ const displayDescriptionEn = descriptionEn ?? description;
       <div class="prose" data-article-prose><slot /></div>
     </article>
 
-    {visibleHeadings.length > 0 && (
-      <aside class="toc-card">
-        <div class="toc-title" data-en="On this page" data-zh="本页目录">On this page</div>
-        <nav>{visibleHeadings.map((heading) => <a class:list={{ 'toc-h3': heading.depth === 3 }} href={`#${heading.slug}`}>{heading.text}</a>)}</nav>
-      </aside>
-    )}
+    <aside class="toc-card" data-toc-card hidden>
+      <div class="toc-title" data-en="On this page" data-zh="本页目录">On this page</div>
+      <nav data-toc-nav></nav>
+    </aside>
   </div>
 
   <script>
@@ -96,7 +92,38 @@ const displayDescriptionEn = descriptionEn ?? description;
       }
     };
 
-    renderMermaid().catch(() => {});
+    const syncArticleLanguage = () => {
+      const lang = document.documentElement.dataset.lang === 'zh' ? 'zh' : 'en';
+      document.querySelectorAll('[data-lang-panel]').forEach((panel) => {
+        const on = panel.getAttribute('data-lang-panel') === lang;
+        (panel as HTMLElement).hidden = !on;
+        panel.setAttribute('aria-hidden', String(!on));
+      });
+
+      const tocCard = document.querySelector('[data-toc-card]');
+      const tocNav = document.querySelector('[data-toc-nav]');
+      const panel = document.querySelector(`[data-lang-panel="${lang}"]`);
+      if (!tocCard || !tocNav || !panel) return;
+
+      tocNav.innerHTML = '';
+      const headings = Array.from(panel.querySelectorAll('h2, h3'));
+      headings.forEach((heading) => {
+        if (!(heading instanceof HTMLElement) || !heading.id) return;
+        const link = document.createElement('a');
+        link.href = `#${heading.id}`;
+        link.textContent = heading.textContent?.trim() || '';
+        if (heading.tagName === 'H3') link.classList.add('toc-h3');
+        tocNav.appendChild(link);
+      });
+      tocCard.hidden = headings.length === 0;
+    };
+
+    renderMermaid()
+      .catch(() => {})
+      .finally(() => {
+        syncArticleLanguage();
+        window.addEventListener('site-language-change', syncArticleLanguage);
+      });
   </script>
 
   <script is:inline>

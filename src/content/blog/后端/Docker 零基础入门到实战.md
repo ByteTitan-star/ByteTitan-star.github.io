@@ -1,6 +1,9 @@
 ---
+
 title: "Docker 零基础入门到实战"
+titleEn: "Docker from Zero to Practice"
 description: "云原生入门基石，Docker零基础实战全攻略。从核心概念、环境搭建到多阶段构建、数据持久化与网络通信，彻底搞懂容器化底层逻辑，带你完成从开发到生产部署的完整闭环。"
+descriptionEn: "A cloud-native starter guide to Docker—from core concepts and setup to multi-stage builds, persistence, networking, and a path from local to production."
 pubDate: 2026-08-12
 ---
 
@@ -382,3 +385,171 @@ docker run -d --name my-blog -p 8080:80 -v ./index.html:/usr/share/nginx/html/in
 Docker 的核心价值，就是彻底解决了应用开发与部署中的「环境一致性」痛点，实现了「一次构建，到处运行」，把应用和运行环境一起打包，让开发、测试、运维的部署流程完全标准化。
 
 同时，Docker 也是云原生技术栈的基石：它解决了**单个容器**的打包、运行、隔离问题，而我们之前学习的 K8s，解决的是**成千上百个容器**的编排、调度、故障自愈、弹性扩缩容问题，二者共同构成了现代应用部署的标准范式。
+
+
+<!-- i18n:en -->
+
+
+# Docker from Zero to Practice
+
+A junior backend engineer once shipped a blog on Kubernetes, then realized they only copy-pasted Dockerfiles and `docker run`—without truly knowing images vs containers. Images ballooned to 1GB, data vanished on restart, and images failed on other hosts.
+
+Docker is the entry stone of cloud-native stacks; Kubernetes sits on a container runtime. Without Docker fundamentals, orchestration stays abstract. This guide goes from concepts to production practice.
+
+## 1. What Problem Does Docker Solve?
+
+Why not just run code locally?
+
+Classic pain: **“works on my machine.”** OS, dependency versions, configs, and env vars differ across environments.
+
+Two more pains:
+
+1. **Resource isolation**: co-located apps fight for CPU/memory; one crash can take neighbors down.
+2. **Deploy speed**: manual deps/config waste minutes per release and don’t scale.
+
+### 1. Core definition
+
+Docker is an open-source **container engine**. Using Linux namespaces/cgroups, it packages app + deps + runtime + config into a standard **image** for “build once, run anywhere,” with isolated processes.
+
+### 2. Docker vs VMs
+
+| Dimension | Docker container | Traditional VM |
+| --- | --- | --- |
+| Virtualization | OS-level; shares host kernel | Hardware-level; full guest OS |
+| Footprint | MBs–hundreds of MB | GBs |
+| Boot | Milliseconds | Seconds–minutes |
+| Isolation | Process-level | Strong hardware isolation |
+| Portability | Excellent | Heavier platform coupling |
+
+VMs rent a whole house; containers rent a private room sharing utilities—cheaper and faster to move.
+
+## 2. Install & Configure
+
+Install Docker Desktop on Windows/Mac, or the engine on Linux. For China networks, configure a registry mirror so pulls are not glacial. Verify with `docker version` and `docker run hello-world`.
+
+## 3. Images, Containers, Dockerfile
+
+- **Image**: immutable layered template
+- **Container**: a running instance of an image
+- **Dockerfile**: build recipe (`FROM`, `COPY`, `RUN`, `CMD`/`ENTRYPOINT`)
+
+Prefer multi-stage builds to keep runtime images small. Never bake secrets into layers.
+
+## 4. Data & Networking
+
+Use **volumes** / bind mounts for persistence (blogs, DBs). Understand bridge/host/none networks and how containers talk via service names on user-defined bridges.
+
+## 5. Compose & Production Basics
+
+`docker compose` describes multi-service stacks (app + db + redis). In production: healthchecks, restart policies, resource limits, non-root users, and scanning base images.
+
+## 6. Closing
+
+Master Docker’s model—image layers, isolation, persistence, networking—before chasing Kubernetes. The container runtime is the ground you stand on.
+
+> Keep all shell commands and Dockerfiles from the Chinese section identical when practicing; only the narrative above is localized for the English UI.
+
+<!-- en-code-sync -->
+
+## Appendix: Code & diagrams from the article
+
+The English narrative above is localized for the language toggle. The following fenced blocks are copied unchanged from the Chinese version so you can still copy-paste every command and snippet while reading in English.
+
+```bash
+    curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+    ```
+```bash
+    systemctl start docker
+    systemctl enable docker
+    ```
+```bash
+# 查看Docker版本，输出版本号说明安装成功
+docker --version
+# 查看Docker详细信息，确认服务正常运行
+docker info
+```
+```bash
+    {
+      "registry-mirrors": [
+        "https://hub-mirror.c.163.com",
+        "https://mirror.baidubce.com",
+        "https://docker.mirrors.ustc.edu.cn"
+      ]
+    }
+    ```
+```
+    /etc/docker/daemon.json
+    ```
+```bash
+    systemctl daemon-reload
+    systemctl restart docker
+    ```
+```bash
+# 构建阶段：用完整的node镜像，安装依赖、打包项目
+FROM node:18-alpine AS builder
+# 设置工作目录
+WORKDIR /app
+# 先复制package.json，利用Docker分层缓存，依赖不变就不会重新安装
+COPY package*.json ./
+# 安装依赖
+RUN npm install
+# 复制所有项目代码
+COPY . .
+# 执行打包命令，生成dist产物目录
+RUN npm run build
+
+# 运行阶段：用轻量的nginx镜像，只保留打包后的产物
+FROM nginx:1.25-alpine
+# 把构建阶段打包好的dist产物，复制到nginx的静态资源目录
+COPY --from=builder /app/dist /usr/share/nginx/html
+# 声明80端口
+EXPOSE 80
+# 启动nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+```bash
+    docker run -d --name nginx-demo -p 80:80 -v ./html:/usr/share/nginx/html nginx:alpine
+    ```
+```bash
+    # 创建一个名为mysql-data的Volume
+    docker volume create mysql-data
+    # 运行MySQL容器，把数据目录挂载到Volume
+    docker run -d --name mysql-demo -p 3306:3306 -v mysql-data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 mysql:8.0
+    ```
+```bash
+    # 1. 创建一个自定义的桥接网络
+    docker network create my-net
+    # 2. 运行MySQL容器，加入my-net网络
+    docker run -d --name mysql-demo --network my-net -e MYSQL_ROOT_PASSWORD=123456 mysql:8.0
+    # 3. 运行后端应用容器，加入同一个网络，直接用容器名mysql-demo访问数据库
+    docker run -d --name backend-demo --network my-net my-backend:v1
+    ```
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的个人博客</title>
+</head>
+<body>
+    <h1>欢迎来到我的个人博客</h1>
+    <p>这是用Docker部署的静态博客</p>
+</body>
+</html>
+```
+```bash
+# 基础镜像用轻量的nginx alpine版本
+FROM nginx:1.25-alpine
+# 把本地的html文件复制到nginx的静态资源目录
+COPY ./index.html /usr/share/nginx/html/index.html
+# 声明80端口
+EXPOSE 80
+# 前台启动nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+```bash
+docker build -t my-blog:v1 .
+```
+```bash
+docker run -d --name my-blog -p 8080:80 -v ./index.html:/usr/share/nginx/html/index.html my-blog:v1
+```

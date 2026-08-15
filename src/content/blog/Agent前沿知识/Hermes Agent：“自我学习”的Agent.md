@@ -1,6 +1,8 @@
 ---
 title: "Hermes Agent：“自我学习”的Agent"
+titleEn: "Hermes Agent: A Self-Learning Agent"
 description: "Hermes Agent 如何实现自我进化？本文深度拆解其自进化技能系统、五层记忆架构与事件驱动多 Agent 协作模型，探索 AI Agent 从『被调用工具』向『共同成长伙伴』演进的核心机制。"
+descriptionEn: "How does Hermes Agent self-evolve? This article unpacks its self-evolving skills system, five-layer memory architecture, and event-driven multi-agent collaboration—and how Agents move from disposable tools toward long-term partners."
 pubDate: 2026-08-12
 ---
 
@@ -169,3 +171,166 @@ Hermes支持多种部署方式，包括**Docker Swarm高可用集群方案**（�
 Hermes框架的出现，标志着AI Agent正从**“被调用的工具”**向**“共同成长的伙伴”**演进。无论是Hermes Agent的自进化技能系统、五层纵深记忆架构，还是HermesAI的轻量级函数调用范式，亦或是事件驱动的多Agent协作模型，都在解决一个核心问题：**如何让AI在持续使用中变得越来越懂你、越来越有用**。
 
 可以预见，随着自改进Agent技术边界的不断拓展，我们与AI的关系将从“使用者与工具”演变为“伙伴与伙伴”。而Hermes，正在为这个未来铺设基础设施。
+
+<!-- i18n:en -->
+
+# Deep Dive into Hermes: How an AI Agent Learns to Evolve
+
+## Introduction: When AI Starts Growing on Its Own
+
+Remember teaching an AI assistant a complex task—only to find it forgotten the next day? In 2026, that frustration is being rewritten by a framework called **Hermes**.
+
+Hermes is not a single product. It names a technical ecosystem: the open-source **Hermes Agent** from Nous Research, and function-calling–centric design patterns popularized by efforts like **HermesAI**. If a traditional Agent is a tool you summon and dismiss, a Hermes-style Agent behaves more like a horse that keeps training—it remembers preferences, extracts lessons from past work, and gets sharper with use.
+
+This article unpacks Hermes’ core mechanisms: a self-evolving skills system, a three-/five-layer memory stack, and an event-driven collaboration model that stretch what Agents can do.
+
+## 1. Core Mechanism: How an Agent Self-Evolves
+
+The classic Agent pain is **goldfish memory**—every chat starts from zero. Hermes attacks that with a deliberate learning loop.
+
+The Mermaid diagram below shows the full Hermes Agent architecture—from the interaction entry and think–act loop, through memory and the self-evolving skill loop, to optional event-driven multi-Agent collaboration.
+
+```mermaid
+graph TD
+    subgraph UserInteraction["User Interaction"]
+        A[User input / task] --> B[Agent Loop entry]
+    end
+
+    subgraph CoreExecution["Core Execution"]
+        B --> C{Think–Act loop<br>Agent Loop}
+        C -->|Needs tools| D[Run tool calls]
+        C -->|No tools| E[Produce final reply]
+        D --> F[Collect tool results]
+        F --> C
+    end
+
+    subgraph MemoryContext["Memory & Context"]
+        G[Three-layer Prompt stack] --> B
+        H[Five-layer memory] --> G
+        H1[Working context] --> H
+        H2[Session memory] --> H
+        H3[User profile] --> H
+        H4[Environment memory] --> H
+        H5[Skill library] --> H
+    end
+
+    subgraph SelfEvolvingSkills["Self-Evolving Skills"]
+        F --> I[Task succeeded?]
+        I -->|Yes| J[Retrospective & distill solution]
+        J --> K[Create/update Skill file<br>Markdown]
+        K --> L[Store in skill library<br>H5]
+        L -.->|Load on similar tasks| G
+        I -->|No| M[Record failure cause]
+        M --> N[Human feedback or auto-correct]
+        N --> O[Revise Skill file]
+        O --> L
+    end
+
+    subgraph EventDrivenOptional["Event-driven multi-Agent (optional)"]
+        P[Event bus] -.->|Decoupled messaging| Q[Other Agent actors]
+        B -.-> P
+    end
+
+    style UserInteraction fill:#f9f,stroke:#333,stroke-width:2px
+    style CoreExecution fill:#ccf,stroke:#333,stroke-width:2px
+    style MemoryContext fill:#cfc,stroke:#333,stroke-width:2px
+    style SelfEvolvingSkills fill:#ffc,stroke:#333,stroke-width:2px
+    style EventDrivenOptional fill:#eee,stroke:#999,stroke-width:1px,stroke-dasharray: 5 5
+```
+
+> **Diagram note**: The **Event-driven multi-Agent (optional)** block uses dashed borders/arrows to mark an optional extension—not every Hermes Agent needs multi-Agent mode. The dashed edge `B -.-> P` means that when the Agent Loop entry (B) needs cross-Agent coordination, it fires collaboration through the event bus (P) in a loosely coupled, async way without blocking the main loop.
+
+### 1.1 Self-Evolving Skills
+
+Hermes’ sharpest idea is a **closed learning loop**. After the Agent finishes a hard task (e.g. “deploy Nginx with SSL”), it retrospects the run and distills a structured **Skill file** (usually Markdown) into a local library. That distillation is more than a log: it captures key decision points, input/output snapshots of tool calls, and a reusable step sequence with expected outcomes and failure handling. Skills become executable playbooks, not vague memories.
+
+On a similar task later, Hermes retrieves and injects the Skill into the system prompt. Critically, **user feedback does not only tweak the current answer—it can rewrite the Skill file itself**, so tomorrow’s run starts from the improved procedure. Pitfalls, configs, and vendor API quirks become durable assets instead of vanishing with the chat.
+
+### 1.2 Three-Layer Prompt Stack and the Think–Act Loop
+
+In Hermes Agent (v0.14.0), the system prompt is layered:
+
+- **Stable**: identity, tool guidance, skill hints that stay constant within a lifetime.
+- **Context**: project files such as `AGENTS.md` / `.cursorrules` that change by scene.
+- **Volatile**: per-turn memory snapshots, user profile slices, timestamps.
+
+This is **cache-friendly**: stable text is built once and reused, which plays well with provider prefix caches and cuts repeated token billing.
+
+The **Agent Loop** itself is simple: send message → check for tool calls → execute and continue → otherwise return the final response. A tiny loop powers a large self-evolution surface.
+
+## 2. Memory System
+
+If skills are muscle, memory is the brain. Hermes uses a deep memory stack to fight goldfish memory.
+
+### 2.1 Five Memory Layers
+
+Implementations vary between “three layers” and “five layers,” but the logic is shared:
+
+| Layer | Lifetime | Contents |
+| --- | --- | --- |
+| **Working context** | Single request | Current chain-of-thought / step state |
+| **Session memory** | Single session | Dialogue summaries; compressed long context |
+| **Durable memory / user profile** | Cross-session | Preferences, coding style, work habits |
+| **Environment memory** | Cross-project | Stack, environment, known pitfalls |
+| **Skill library** | Permanent | Validated, reusable solutions |
+
+### 2.2 Retrieval
+
+Hermes does not dump all memory into every prompt. It uses **FTS5 full-text search** to pull relevant fragments on demand, keeping context length stable and latency low while still recalling across sessions.
+
+Optional **Honcho-style user modeling** can go further—inferring unspoken preferences and even contradictions—to deepen the profile.
+
+## 3. Communication & Collaboration: Event-Driven Multi-Agent
+
+For enterprise workloads, Hermes also offers an **event-driven multi-Agent framework** inspired by messaging middleware and the Actor model.
+
+### 3.1 Agent as Actor
+
+Each Agent is an **Actor** with its own mailbox, state store, and toolbox, talking asynchronously over an event bus.
+
+That contrasts with centralized planner designs (common in LangChain/AutoGen stacks). As Agent count grows, a central planner’s context fills with history and decision quality collapses. Hermes’ **decentralized topology** fits distributed deploy: Agents subscribe to events (`OrderCreated`, `AnomalyDetected`) and act from local state machines without a single coordinator.
+
+### 3.2 Event-Driven Collaboration
+
+Agents avoid sync HTTP fan-out; they decouple via **domain events** chained into a DAG.
+
+Core pieces typically include:
+- **Event Gateway**: routing/persistence/replay on Pulsar or Kafka
+- **Agent Runtime**: Agent logic + finite-state machines (e.g. `transitions`)
+- **Tool Registry**: discovery via etcd + gRPC
+- **Memory Mesh**: shared similarity memory (e.g. Milvus)
+- **Observer**: Prometheus-style observability
+
+Delivery is **at-least-once**, with idempotent consumption (e.g. Redis-tracked `event_id`) to avoid double work.
+
+## 4. HermesAI: Function-Calling–First Lightweight Pattern
+
+Alongside Nous Research’s Hermes Agent, **HermesAI** names a lightweight pattern: **function calling as the absolute center**, driven by a deterministic state machine.
+
+Design rules worth stealing:
+
+1. **No implicit reasoning**: every tool call is explicit—easy to observe and interrupt
+2. **Immutable state**: context versions on each update; snapshots and rollback
+3. **Tools as contracts**: Pydantic schemas for args; typed validation blocks invented parameters
+
+In production, a **Router–Worker** split shines: a Router decomposes work and fans out to Workers with their own prompts/tools, shrinking per-call context. Teams have shipped SQL ops assistants and cloud-cost Agents on this pattern at 5k+ tasks/day with P95 under ~1.8s.
+
+## 5. Deployment and Ecosystem Outlook
+
+### 5.1 Deployment
+
+Hermes supports options from **Docker Swarm HA** (intranet) to **Windows one-click packs** (personal trial). Horizontal scale partitions by business domain; event partitions hash on business IDs so one order’s events stay ordered.
+
+### 5.2 Hermes vs OpenClaw
+
+| Dimension | Hermes | OpenClaw |
+| --- | --- | --- |
+| **Core idea** | Self-evolution + durable memory as a growing partner | Gateway routing + local-first stable execution hub |
+| **Skills** | Auto-generated and improved by the Agent | Hand-authored and maintained |
+| **Best fit** | Personal assistants, long-tail automation | Enterprise workflows, production integration |
+
+## Closing
+
+Hermes marks a shift from **callable tools** toward **partners that grow with you**. Whether via self-evolving skills, deep memory, function-calling discipline, or event-driven multi-Agent graphs, the question is the same: **how do we make AI more useful the more we use it?**
+
+As self-improving Agents mature, the relationship moves from user–tool toward peer–peer. Hermes is laying rails for that future.
