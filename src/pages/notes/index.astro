@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteTopbar from '../../components/SiteTopbar.astro';
+import ContentPreview from '../../components/ContentPreview.astro';
+
+const notes = (await getCollection('notes', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const categories = [...new Set(notes.map((entry) => entry.data.category))].sort();
+---
+<BaseLayout title="Notes | ByteTitan" description="Learning notes and personal knowledge base by Xin Wang.">
+  <SiteTopbar active="notes" />
+
+  <main class="listing-shell notes-shell">
+    <div class="listing-heading">
+      <h1 data-en="Notes" data-zh="笔记">Notes</h1>
+      <p data-en="A practical knowledge base for LLM systems, model security, papers, and engineering." data-zh="关于 LLM 系统、模型安全、论文阅读与工程实践的知识库。">A practical knowledge base for LLM systems, model security, papers, and engineering.</p>
+    </div>
+
+    <div class="listing-controls notes-controls">
+      <label class="search-box">
+        <span data-en="Search" data-zh="搜索">Search</span>
+        <input type="search" placeholder="search notes..." data-en-placeholder="search notes..." data-zh-placeholder="搜索笔记..." aria-label="Search notes" data-content-search />
+      </label>
+      <span class="result-count" data-result-count>{notes.length} notes</span>
+    </div>
+
+    {categories.length > 0 && (
+      <div class="category-row" aria-label="Note categories">
+        <button class="category-chip is-active" type="button" data-category-filter="all" data-en="All" data-zh="全部">All</button>
+        {categories.map((category) => <button class="category-chip" type="button" data-category-filter={category.toLowerCase()}>{category}</button>)}
+      </div>
+    )}
+
+    <div class="listing-grid" data-content-list>
+      {notes.map((entry) => <ContentPreview entry={entry} kind="notes" />)}
+    </div>
+    <p class="filter-empty" data-filter-empty hidden data-en="No matching notes." data-zh="没有匹配的笔记。">No matching notes.</p>
+  </main>
+
+  <script is:inline>
+    (() => {
+      const input = document.querySelector('[data-content-search]');
+      const buttons = [...document.querySelectorAll('[data-category-filter]')];
+      const cards = [...document.querySelectorAll('[data-search]')];
+      const count = document.querySelector('[data-result-count]');
+      const empty = document.querySelector('[data-filter-empty]');
+      let category = 'all';
+      let visible = cards.length;
+      const updateCount = () => {
+        if (!count) return;
+        const zh = document.documentElement.dataset.lang === 'zh';
+        count.textContent = zh ? `${visible} 条笔记` : `${visible} ${visible === 1 ? 'note' : 'notes'}`;
+      };
+      const filter = () => {
+        const term = input?.value.trim().toLowerCase() ?? '';
+        visible = 0;
+        cards.forEach((card) => {
+          const termMatch = !term || card.dataset.search.includes(term);
+          const catMatch = category === 'all' || card.dataset.category === category;
+          const show = termMatch && catMatch;
+          card.hidden = !show;
+          if (show) visible++;
+        });
+        updateCount();
+        if (empty) empty.hidden = visible !== 0;
+      };
+      input?.addEventListener('input', filter);
+      buttons.forEach((button) => button.addEventListener('click', () => {
+        category = button.dataset.categoryFilter;
+        buttons.forEach((item) => item.classList.toggle('is-active', item === button));
+        filter();
+      }));
+      window.addEventListener('site-language-change', updateCount);
+      updateCount();
+    })();
+  </script>
+</BaseLayout>

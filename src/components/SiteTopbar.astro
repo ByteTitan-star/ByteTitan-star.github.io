@@ -1,0 +1,21 @@
+---
+import LanguageToggle from './LanguageToggle.astro';
+const { active = '' } = Astro.props;
+const nav = [
+  { key: 'home', href: '/', en: 'Home', zh: '首页' },
+  { key: 'blog', href: '/blog/', en: 'Blog', zh: '博客' },
+  { key: 'notes', href: '/notes/', en: 'Notes', zh: '笔记' },
+  { key: 'archive', href: '/archive/', en: 'Archive', zh: '归档' }
+];
+---
+<header class="site-topbar">
+  <a class="brand-link" href="/">Xin Wang</a>
+  <div class="topbar-right">
+    <nav class="top-nav" aria-label="Primary">
+      {nav.map((item) => (
+        <a class:list={{ active: active === item.key }} href={item.href} data-en={item.en} data-zh={item.zh}>{item.en}</a>
+      ))}
+    </nav>
+    <LanguageToggle />
+  </div>
+</header>

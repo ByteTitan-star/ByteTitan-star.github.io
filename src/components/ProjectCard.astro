@@ -1,0 +1,34 @@
+---
+import type { Project } from '../data/projects';
+const { project, index = 0 } = Astro.props as { project: Project; index?: number };
+const motion = index % 2 === 0 ? 'from-left' : 'from-right';
+---
+<article class="work-card reveal-on-scroll" data-motion={motion}>
+  <button
+    class="work-visual media-zoom-trigger"
+    type="button"
+    data-lightbox-src={project.image}
+    data-lightbox-alt={project.imageAlt}
+    data-en-aria={`Enlarge ${project.title} system image`}
+    data-zh-aria={`放大查看 ${project.title} 系统图片`}
+    aria-label={`Enlarge ${project.title} system image`}
+  >
+    <div class="work-visual-fallback" aria-hidden="true">
+      <div class="work-ghost-title">{project.title}</div>
+    </div>
+    <img src={project.image} alt={project.imageAlt} loading="lazy" onerror="this.style.display='none'" />
+    <span class="media-zoom-hint" data-en="View detail ↗" data-zh="放大查看 ↗">View detail ↗</span>
+  </button>
+
+  <div class="work-content">
+    <div class="work-copy">
+      <div class="work-kicker" data-en={project.kicker} data-zh={project.kickerZh}>{project.kicker}</div>
+      <h3>{project.title}</h3>
+      <p data-en={project.description} data-zh={project.descriptionZh}>{project.description}</p>
+      <div class="tag-row">
+        {project.stack.map((tech) => <span>{tech}</span>)}
+      </div>
+    </div>
+    <a class="btn btn--secondary project-link" href={project.source} target="_blank" rel="noreferrer" data-en="Source ↗" data-zh="源码 ↗">Source ↗</a>
+  </div>
+</article>

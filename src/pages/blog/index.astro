@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteTopbar from '../../components/SiteTopbar.astro';
+import ContentPreview from '../../components/ContentPreview.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+<BaseLayout title="Blog | ByteTitan" description="Long-form technical writing by Xin Wang.">
+  <SiteTopbar active="blog" />
+
+  <main class="listing-shell">
+    <div class="listing-heading">
+      <h1 data-en="Blog" data-zh="博客">Blog</h1>
+      <p data-en="Project retrospectives, research notes, and engineering experiments." data-zh="记录项目复盘、研究思考与工程实验。">Project retrospectives, research notes, and engineering experiments.</p>
+    </div>
+
+    <div class="listing-controls">
+      <label class="search-box">
+        <span data-en="Search" data-zh="搜索">Search</span>
+        <input type="search" placeholder="title, tag, topic..." data-en-placeholder="title, tag, topic..." data-zh-placeholder="标题、标签或主题..." aria-label="Search blog posts" data-content-search />
+      </label>
+      <span class="result-count" data-result-count data-total={posts.length}>{posts.length} entries</span>
+    </div>
+
+    <div class="listing-grid" data-content-list>
+      {posts.map((entry) => <ContentPreview entry={entry} kind="blog" />)}
+    </div>
+    <p class="filter-empty" data-filter-empty hidden data-en="No matching posts." data-zh="没有匹配的文章。">No matching posts.</p>
+  </main>
+
+  <script is:inline>
+    (() => {
+      const input = document.querySelector('[data-content-search]');
+      const cards = [...document.querySelectorAll('[data-search]')];
+      const count = document.querySelector('[data-result-count]');
+      const empty = document.querySelector('[data-filter-empty]');
+      let visible = cards.length;
+      const updateCount = () => {
+        if (!count) return;
+        const zh = document.documentElement.dataset.lang === 'zh';
+        count.textContent = zh ? `${visible} 篇` : `${visible} ${visible === 1 ? 'entry' : 'entries'}`;
+      };
+      const filter = () => {
+        const term = input?.value.trim().toLowerCase() ?? '';
+        visible = 0;
+        cards.forEach((card) => {
+          const show = !term || card.dataset.search.includes(term);
+          card.hidden = !show;
+          if (show) visible++;
+        });
+        updateCount();
+        if (empty) empty.hidden = visible !== 0;
+      };
+      input?.addEventListener('input', filter);
+      window.addEventListener('site-language-change', updateCount);
+      updateCount();
+    })();
+  </script>
+</BaseLayout>

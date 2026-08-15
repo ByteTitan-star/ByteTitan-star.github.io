@@ -1,0 +1,24 @@
+---
+const { entry, kind } = Astro.props;
+const href = `/${kind}/${entry.id}/`;
+const date = entry.data.pubDate.toLocaleDateString('en-CA');
+const category = kind === 'blog' ? 'Blog' : (entry.data.category ?? 'Note');
+const categoryZh = kind === 'blog' ? '博客' : (category === 'General' ? '笔记' : category);
+const titleEn = entry.data.titleEn ?? entry.data.title;
+const descriptionEn = entry.data.descriptionEn ?? entry.data.description;
+const searchText = [entry.data.title, titleEn, entry.data.description, descriptionEn, category, ...(entry.data.tags ?? [])].join(' ').toLowerCase();
+---
+<a class="writing-card reveal-on-scroll" href={href} data-search={searchText} data-category={category.toLowerCase()}>
+  <div class="writing-meta">
+    <span data-en={category} data-zh={categoryZh}>{category}</span>
+    <time datetime={entry.data.pubDate.toISOString()}>{date}</time>
+  </div>
+  <h3 data-en={titleEn} data-zh={entry.data.title}>{titleEn}</h3>
+  <p data-en={descriptionEn} data-zh={entry.data.description}>{descriptionEn}</p>
+  <div class="writing-footer">
+    <div class="mini-tags">
+      {entry.data.tags?.slice(0, 3).map((tag: string) => <span>{tag}</span>)}
+    </div>
+    <span class="writing-arrow" aria-hidden="true">↗</span>
+  </div>
+</a>

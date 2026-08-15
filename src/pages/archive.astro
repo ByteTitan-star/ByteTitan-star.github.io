@@ -1,0 +1,29 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteTopbar from '../components/SiteTopbar.astro';
+
+const blog = (await getCollection('blog', ({ data }) => !data.draft)).map((entry) => ({ ...entry, kind: 'blog' }));
+const notes = (await getCollection('notes', ({ data }) => !data.draft)).map((entry) => ({ ...entry, kind: 'notes' }));
+const entries = [...blog, ...notes].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+<BaseLayout title="Archive | Xin Wang" description="Archive of Xin Wang's blog posts and notes.">
+  <SiteTopbar active="archive" />
+
+  <main class="listing-shell">
+    <div class="listing-heading">
+      <h1 data-en="Archive" data-zh="归档">Archive</h1>
+      <p data-en="All public posts and notes, ordered by date." data-zh="全部公开博客与学习笔记，按时间排序。">All public posts and notes, ordered by date.</p>
+    </div>
+
+    <div class="archive-list">
+      {entries.map((entry) => (
+        <a class="archive-item" href={`/${entry.kind}/${entry.id}/`}>
+          <time>{entry.data.pubDate.toLocaleDateString('en-CA')}</time>
+          <span class="archive-kind" data-en={entry.kind === 'blog' ? 'Blog' : 'Note'} data-zh={entry.kind === 'blog' ? '博客' : '笔记'}>{entry.kind === 'blog' ? 'Blog' : 'Note'}</span>
+          <strong data-en={entry.data.titleEn ?? entry.data.title} data-zh={entry.data.title}>{entry.data.titleEn ?? entry.data.title}</strong>
+        </a>
+      ))}
+    </div>
+  </main>
+</BaseLayout>

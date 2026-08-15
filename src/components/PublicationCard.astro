@@ -1,0 +1,53 @@
+---
+import type { Publication } from '../data/publications';
+const { publication, index = 0 } = Astro.props as { publication: Publication; index?: number };
+const motion = index % 2 === 0 ? 'scale-fade' : 'tilt-slide';
+---
+<article class="research-card reveal-on-scroll" data-motion={motion}>
+  <div class="research-main">
+    <div class="research-topline">
+      <span data-en={publication.category} data-zh={publication.categoryZh}>{publication.category}</span>
+      <span>{publication.year}</span>
+    </div>
+
+    <h3>{publication.title}</h3>
+
+    <div class="research-authors">
+      {publication.authors.map((author, index) => (
+        <>
+          {author.self ? <strong>{author.name}</strong> : author.name}
+          {index < publication.authors.length - 1 ? ', ' : ''}
+        </>
+      ))}
+    </div>
+
+    <div class="research-venue" data-en={publication.venue} data-zh={publication.venueZh}>{publication.venue}</div>
+
+    <details class="research-details">
+      <summary class="research-summary"><span data-en="Contribution" data-zh="研究贡献">Contribution</span><span aria-hidden="true">+</span></summary>
+      <div class="research-detail-body">
+        <p data-en={publication.description} data-zh={publication.descriptionZh}>{publication.description}</p>
+        {(publication.paper || publication.code || publication.bibtex) && (
+          <div class="research-actions">
+            {publication.paper && <a class="btn btn--secondary" href={publication.paper} target="_blank" rel="noreferrer">Paper ↗</a>}
+            {publication.code && <a class="btn btn--secondary" href={publication.code} target="_blank" rel="noreferrer">Code ↗</a>}
+            {publication.bibtex && <a class="btn btn--secondary" href={publication.bibtex}>BibTeX</a>}
+          </div>
+        )}
+      </div>
+    </details>
+  </div>
+
+  <button
+    class="research-visual media-zoom-trigger"
+    type="button"
+    data-lightbox-src={publication.image}
+    data-lightbox-alt={publication.imageAlt}
+    data-en-aria="Enlarge publication figure"
+    data-zh-aria="放大查看论文图片"
+    aria-label="Enlarge publication figure"
+  >
+    <img src={publication.image} alt={publication.imageAlt} loading="lazy" onerror="this.style.display='none'" />
+    <span class="media-zoom-hint" data-en="View detail ↗" data-zh="放大查看 ↗">View detail ↗</span>
+  </button>
+</article>

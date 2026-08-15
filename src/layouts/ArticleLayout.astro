@@ -1,0 +1,65 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import SiteTopbar from '../components/SiteTopbar.astro';
+
+interface Props {
+  title: string;
+  titleEn?: string;
+  description: string;
+  descriptionEn?: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  tags?: string[];
+  kind: 'Blog' | 'Note';
+  headings?: { depth: number; slug: string; text: string }[];
+}
+
+const { title, titleEn, description, descriptionEn, pubDate, updatedDate, tags = [], kind, headings = [] } = Astro.props;
+const visibleHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const fmt = (date: Date) => date.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
+const displayTitleEn = titleEn ?? title;
+const displayDescriptionEn = descriptionEn ?? description;
+---
+<BaseLayout title={`${displayTitleEn} | ByteTitan`} description={displayDescriptionEn}>
+  <div class="reading-progress" data-reading-progress></div>
+  <SiteTopbar />
+
+  <div class="article-shell">
+    <article class="article-card">
+      <a class="article-back" href={kind === 'Blog' ? '/blog/' : '/notes/'}>
+        <span aria-hidden="true">←</span>
+        <span data-en={kind === 'Blog' ? 'Back to Blog' : 'Back to Notes'} data-zh={kind === 'Blog' ? '返回博客' : '返回笔记'}>{kind === 'Blog' ? 'Back to Blog' : 'Back to Notes'}</span>
+      </a>
+      <div class="article-kicker" data-en={kind} data-zh={kind === 'Blog' ? '博客' : '笔记'}>{kind}</div>
+      <h1 data-en={displayTitleEn} data-zh={title}>{displayTitleEn}</h1>
+      <p class="article-description" data-en={displayDescriptionEn} data-zh={description}>{displayDescriptionEn}</p>
+      <div class="article-meta">
+        <span><span data-en="Published" data-zh="发布">Published</span> {fmt(pubDate)}</span>
+        {updatedDate && <span><span data-en="Updated" data-zh="更新">Updated</span> {fmt(updatedDate)}</span>}
+      </div>
+      {tags.length > 0 && <div class="article-tags">{tags.map((tag) => <span class="tech-tag">{tag}</span>)}</div>}
+      <div class="prose"><slot /></div>
+    </article>
+
+    {visibleHeadings.length > 0 && (
+      <aside class="toc-card">
+        <div class="toc-title" data-en="On this page" data-zh="本页目录">On this page</div>
+        <nav>{visibleHeadings.map((heading) => <a class:list={{ 'toc-h3': heading.depth === 3 }} href={`#${heading.slug}`}>{heading.text}</a>)}</nav>
+      </aside>
+    )}
+  </div>
+
+  <script is:inline>
+    (() => {
+      const bar = document.querySelector('[data-reading-progress]');
+      const update = () => {
+        const height = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = height > 0 ? Math.min(1, window.scrollY / height) : 0;
+        if (bar) bar.style.transform = `scaleX(${progress})`;
+      };
+      update();
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+    })();
+  </script>
+</BaseLayout>

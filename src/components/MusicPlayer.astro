@@ -1,0 +1,242 @@
+<div class="music-dock" data-music-player aria-label="Background music player">
+  <audio data-music-audio preload="metadata"></audio>
+  <button class="music-main" type="button" data-music-toggle aria-label="Play background music" title="Play / Pause">
+    <span class="music-icon" data-music-icon aria-hidden="true">▶</span>
+    <span class="music-meta">
+      <strong data-music-title data-en="Background music" data-zh="背景音乐">Background music</strong>
+      <small data-music-status data-en="Loading playlist…" data-zh="正在读取歌单…">Loading playlist…</small>
+    </span>
+  </button>
+  <div class="music-controls">
+    <select data-music-playlist aria-label="Playlist" title="Playlist"></select>
+    <button type="button" data-music-next aria-label="Next track" title="Next track">→</button>
+    <label class="music-volume" title="Volume">
+      <span aria-hidden="true">◔</span>
+      <input data-music-volume type="range" min="0" max="1" step="0.01" value="0.30" aria-label="Background music volume" />
+    </label>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector('[data-music-player]');
+    if (!root) return;
+    const audio = root.querySelector('[data-music-audio]');
+    const toggle = root.querySelector('[data-music-toggle]');
+    const icon = root.querySelector('[data-music-icon]');
+    const title = root.querySelector('[data-music-title]');
+    const status = root.querySelector('[data-music-status]');
+    const next = root.querySelector('[data-music-next]');
+    const volume = root.querySelector('[data-music-volume]');
+    const select = root.querySelector('[data-music-playlist]');
+    if (!audio || !toggle || !icon || !title || !status || !next || !volume || !select) return;
+
+    const lang = () => document.documentElement.dataset.lang === 'zh' ? 'zh' : 'en';
+    let playlists = [];
+    let playlistIndex = 0;
+    let trackIndex = 0;
+    let attemptedAutoplay = false;
+    let shouldPlay = false;
+    const STORAGE_KEY = 'bytetitan-music-state-v2';
+
+    const copy = (en, zh) => lang() === 'zh' ? zh : en;
+    const normalizeTrack = (track) => {
+      if (typeof track === 'string') {
+        const filename = track.split('/').pop() || track;
+        return {
+          title: filename.replace(/\.[^.]+$/, ''),
+          src: track.startsWith('/') ? track : `/audio/tracks/${encodeURIComponent(track)}`
+        };
+      }
+      if (track && typeof track === 'object' && typeof track.src === 'string') {
+        return {
+          ...track,
+          title: track.title || track.src.split('/').pop()?.replace(/\.[^.]+$/, '') || copy('Background music', '背景音乐')
+        };
+      }
+      return null;
+    };
+    const currentList = () => (playlists[playlistIndex]?.tracks || []).map(normalizeTrack).filter(Boolean);
+    const currentTrack = () => currentList()[trackIndex];
+
+    const saveState = () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          playlistIndex,
+          trackIndex,
+          volume: audio.volume,
+          shouldPlay
+        }));
+      } catch (_) {}
+    };
+
+    const updateUI = () => {
+      const track = currentTrack();
+      const playing = !audio.paused && !audio.ended;
+      icon.textContent = playing ? 'Ⅱ' : '▶';
+      toggle.setAttribute('aria-label', playing ? copy('Pause background music', '暂停背景音乐') : copy('Play background music', '播放背景音乐'));
+      title.textContent = track?.title || copy('Background music', '背景音乐');
+      if (!currentList().length) {
+        status.textContent = copy('Add tracks in /public/audio/tracks', '请把音乐文件放入 /public/audio/tracks');
+      } else if (playing) {
+        status.textContent = `${playlists[playlistIndex]?.name || copy('Playlist', '歌单')} · ${trackIndex + 1}/${currentList().length}`;
+      } else {
+        status.textContent = `${copy('Tap to play', '点击播放')} · ${Math.round(audio.volume * 100)}%`;
+      }
+    };
+
+    const loadTrack = (autoplay = false) => {
+      const track = currentTrack();
+      if (!track?.src) { updateUI(); return; }
+      audio.src = track.src;
+      audio.load();
+      saveState();
+      updateUI();
+      if (autoplay) play();
+    };
+
+    const play = async () => {
+      if (!currentTrack()) return;
+      try {
+        await audio.play();
+      } catch (_) {
+        status.textContent = copy('Browser blocked autoplay · tap once to start', '浏览器阻止了自动播放 · 点击一次即可开始');
+      }
+      updateUI();
+    };
+
+    const nextTrack = () => {
+      const list = currentList();
+      if (!list.length) return;
+      trackIndex = (trackIndex + 1) % list.length;
+      loadTrack(true);
+    };
+
+    const populatePlaylists = () => {
+      select.innerHTML = '';
+      playlists.forEach((playlist, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = playlist.name || `Playlist ${index + 1}`;
+        select.appendChild(option);
+      });
+      select.value = String(playlistIndex);
+    };
+
+    const boot = async () => {
+      try {
+        const response = await fetch('/audio/playlist.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('playlist missing');
+        const config = await response.json();
+        playlists = (config.playlists || []).filter((item) => Array.isArray(item.tracks));
+        audio.volume = Math.max(0, Math.min(1, Number(config.defaultVolume ?? .30)));
+        volume.value = String(audio.volume);
+        shouldPlay = config.autoplay !== false;
+
+        try {
+          const savedV2Raw = localStorage.getItem(STORAGE_KEY);
+          const legacyRaw = localStorage.getItem('bytetitan-music-state');
+          const saved = JSON.parse(savedV2Raw || legacyRaw || '{}');
+          playlistIndex = Math.min(Math.max(Number(saved.playlistIndex) || 0, 0), Math.max(playlists.length - 1, 0));
+          trackIndex = Math.min(Math.max(Number(saved.trackIndex) || 0, 0), Math.max((playlists[playlistIndex]?.tracks?.length || 1) - 1, 0));
+
+          // v2 intentionally resets the old default-volume cache once, while preserving
+          // an explicit volume choice made after this revision.
+          if (savedV2Raw && typeof saved.volume === 'number') {
+            audio.volume = Math.max(0, Math.min(1, saved.volume));
+            volume.value = String(audio.volume);
+          }
+
+          if (typeof saved.shouldPlay === 'boolean') {
+            shouldPlay = saved.shouldPlay;
+          }
+        } catch (_) {}
+
+        populatePlaylists();
+        loadTrack(false);
+        if (shouldPlay && currentTrack()) {
+          attemptedAutoplay = true;
+          await play();
+        }
+      } catch (_) {
+        playlists = [];
+        updateUI();
+      }
+    };
+
+    toggle.addEventListener('click', async () => {
+      if (audio.paused) {
+        shouldPlay = true;
+        saveState();
+        await play();
+      } else {
+        shouldPlay = false;
+        audio.pause();
+        saveState();
+        updateUI();
+      }
+    });
+    next.addEventListener('click', nextTrack);
+    select.addEventListener('change', () => {
+      playlistIndex = Number(select.value) || 0;
+      trackIndex = 0;
+      loadTrack(shouldPlay);
+    });
+    volume.addEventListener('input', () => {
+      audio.volume = Number(volume.value);
+      saveState();
+    });
+    audio.addEventListener('play', updateUI);
+    audio.addEventListener('pause', updateUI);
+    audio.addEventListener('ended', nextTrack);
+    audio.addEventListener('error', () => {
+      status.textContent = copy('Track unavailable · check playlist.json', '音频不可用 · 请检查 playlist.json');
+    });
+
+    const unlock = () => {
+      if (attemptedAutoplay && shouldPlay && audio.paused && currentTrack()) play();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    window.addEventListener('storage', (event) => {
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      try {
+        const saved = JSON.parse(event.newValue);
+
+        if (typeof saved.volume === 'number') {
+          audio.volume = Math.max(0, Math.min(1, saved.volume));
+          volume.value = String(audio.volume);
+        }
+
+        // Pause is propagated across open tabs/windows.
+        // Play is intentionally NOT propagated, to avoid two tabs playing at once.
+        if (saved.shouldPlay === false) {
+          shouldPlay = false;
+          audio.pause();
+          updateUI();
+        } else if (saved.shouldPlay === true) {
+          shouldPlay = true;
+        }
+      } catch (_) {}
+    });
+
+    const footer = document.querySelector('.site-footer');
+    const syncFooterClearance = () => {
+      if (!footer) {
+        root.style.setProperty('--footer-clearance', '0px');
+        return;
+      }
+      const rect = footer.getBoundingClientRect();
+      const visibleFooter = Math.max(0, Math.min(rect.height, window.innerHeight - rect.top));
+      root.style.setProperty('--footer-clearance', `${Math.ceil(visibleFooter)}px`);
+    };
+
+    window.addEventListener('scroll', syncFooterClearance, { passive: true });
+    window.addEventListener('resize', syncFooterClearance);
+    window.addEventListener('site-language-change', updateUI);
+    syncFooterClearance();
+    boot();
+  })();
+</script>

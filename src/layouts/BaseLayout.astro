@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import MusicPlayer from '../components/MusicPlayer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  bodyClass?: string;
+}
+
+const {
+  title = 'ByteTitan — Xin Wang',
+  description = 'Xin Wang — AI security researcher and LLM systems builder. Research, projects, writing, and learning notes.',
+  bodyClass = ''
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en" data-lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f7f8fa" />
+    <meta name="color-scheme" content="light" />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      (() => {
+        try {
+          const saved = localStorage.getItem('bytetitan-language');
+          const lang = saved === 'zh' ? 'zh' : 'en';
+          document.documentElement.dataset.lang = lang;
+          document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+        } catch (_) {}
+      })();
+    </script>
+  </head>
+  <body class={bodyClass}>
+    <slot />
+    <MusicPlayer />
+    <script is:inline src="/i18n.js" defer></script>
+    <script is:inline>
+      (() => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reveal = document.querySelectorAll('.reveal-on-scroll, .motion-on-scroll');
+        if (reduced) {
+          reveal.forEach((el) => el.classList.add('is-visible'));
+          return;
+        }
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.08, rootMargin: '0px 0px -24px' });
+        reveal.forEach((el) => observer.observe(el));
+      })();
+    </script>
+  </body>
+</html>

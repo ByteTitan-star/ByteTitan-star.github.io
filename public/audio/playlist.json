@@ -1,0 +1,23 @@
+{
+  "autoplay": true,
+  "defaultVolume": 0.2,
+  "playlists": [
+    {
+      "name": "Focus",
+      "tracks": [
+        { "title": "Jamvana — OBA O", "src": "/audio/tracks/jamvana-oba-o.flac" },
+        { "title": "LVTHER & Myzica — Some Kind Of Magic", "src": "/audio/tracks/lvther-myzica-some-kind-of-magic.flac" },
+        { "title": "Son Han — Slow Down", "src": "/audio/tracks/son-han-slow-down.flac" },
+        { "title": "STRFKR — While I'm Alive", "src": "/audio/tracks/strfkr-while-im-alive.flac" }
+      ]
+    },
+    {
+      "name": "Night",
+      "tracks": [
+        { "title": "Dead Famous Brothers — Metrohead", "src": "/audio/tracks/dead-famous-brothers-metrohead.flac" },
+        { "title": "TroyBoi — ili", "src": "/audio/tracks/troyboi-ili.flac" },
+        { "title": "Grabbitz — Die For You", "src": "/audio/tracks/grabbitz-die-for-you.flac" }
+      ]
+    }
+  ]
+}

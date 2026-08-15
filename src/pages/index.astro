@@ -1,0 +1,392 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LanguageToggle from '../components/LanguageToggle.astro';
+import PublicationCard from '../components/PublicationCard.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import ContentPreview from '../components/ContentPreview.astro';
+import { publications } from '../data/publications';
+import { projects } from '../data/projects';
+
+const blogs = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 2);
+
+const notes = (await getCollection('notes', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 2);
+
+const builtAt = new Date();
+const buildDate = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Shanghai',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).format(builtAt);
+const buildDateISO = builtAt.toISOString();
+---
+<BaseLayout bodyClass="home-page">
+  <a class="skip-link" href="#main" data-en="Skip to content" data-zh="跳到正文">Skip to content</a>
+
+  <video class="site-motion-bg" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260622_204103_f607742e-09da-4cf5-bb06-4e67b0a531de.mp4" type="video/mp4" />
+  </video>
+
+  <div class="scroll-progress" aria-hidden="true">
+    <div class="scroll-progress-track">
+      <span class="scroll-progress-fill"></span>
+      <span class="scroll-progress-dot"></span>
+    </div>
+    <span class="scroll-progress-label">00%</span>
+  </div>
+
+  <section class="hero" id="top" aria-label="Homepage masthead">
+    <div class="hero-shade" aria-hidden="true"></div>
+
+    <div class="hero-layer">
+      <header class="hero-nav">
+        <a class="hero-brand" href="#top">Xin Wang</a>
+
+        <nav class="desktop-nav" aria-label="Primary navigation">
+          <a href="#work" data-en="Work" data-zh="项目">Work</a>
+          <a href="#research" data-en="Research" data-zh="研究">Research</a>
+          <a href="#writing" data-en="Writing" data-zh="写作">Writing</a>
+          <a href="#about" data-en="About" data-zh="关于">About</a>
+        </nav>
+
+        <div class="desktop-actions">
+          <LanguageToggle />
+          <a class="btn btn--on-dark-primary nav-pill" href="mailto:wxcurry223@gmail.com" data-en="Contact" data-zh="联系我">Contact</a>
+        </div>
+
+        <div class="mobile-nav-tools">
+          <LanguageToggle />
+          <button class="hamburger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </header>
+
+    </div>
+
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+      <div class="mobile-menu-head">
+        <a href="#top" class="mobile-brand">Xin Wang</a>
+        <button class="mobile-close" type="button" aria-label="Close menu"><span></span><span></span></button>
+      </div>
+      <nav class="mobile-links" aria-label="Mobile navigation">
+        <a href="#work" style="--delay:150ms" data-en="Work" data-zh="项目">Work</a>
+        <a href="#research" style="--delay:230ms" data-en="Research" data-zh="研究">Research</a>
+        <a href="#writing" style="--delay:310ms" data-en="Writing" data-zh="写作">Writing</a>
+        <a href="#about" style="--delay:390ms" data-en="About" data-zh="关于">About</a>
+        <a href="#contact" style="--delay:470ms" data-en="Contact" data-zh="联系">Contact</a>
+      </nav>
+    </div>
+  </section>
+
+  <main class="light-site" id="main">
+    <section class="intro-section section section-shell" id="about">
+      <div class="intro-portrait reveal-on-scroll">
+        <img src="/figures/ProfilePicture.png" alt="Portrait of Xin Wang" loading="lazy" />
+      </div>
+      <div class="intro-copy reveal-on-scroll">
+        <p class="section-eyebrow" data-en="About" data-zh="关于我">About</p>
+        <h2 class="editorial-title" data-en="Research and engineering, in one practice." data-zh="把研究与工程，落到同一件事上。">Research and engineering, in one practice.</h2>
+        <p class="intro-lead" data-en="I am a Master's student in Computer Technology at Capital Normal University. My current work focuses on model security, especially clean-label backdoor attacks, alongside agentic LLM systems, retrieval, and research tooling." data-zh="现就读于首都师范大学计算机技术专业硕士。当前主要关注模型安全，尤其是干净标签后门攻击，同时持续实践智能体 LLM 系统、检索与科研工具。">
+          I am a Master's student in Computer Technology at Capital Normal University. My current work focuses on model security, especially clean-label backdoor attacks, alongside agentic LLM systems, retrieval, and research tooling.
+        </p>
+      </div>
+    </section>
+
+    <section class="work-section section section-shell" id="work">
+      <div class="section-heading section-heading--carousel reveal-on-scroll">
+        <div>
+          <h2 class="editorial-title" data-en="Current Systems" data-zh="在研系统">Current Systems</h2>
+        </div>
+        <div class="project-carousel-controls" data-project-controls aria-label="Project carousel controls">
+          <button type="button" data-project-prev aria-label="Previous project">←</button>
+          <div class="project-carousel-meta">
+            <span class="project-carousel-count" aria-live="polite">
+              <strong data-project-current>1</strong>
+              <span aria-hidden="true">/</span>
+              <span data-project-total>{projects.length}</span>
+            </span>
+            <div class="project-carousel-dots" data-project-dots role="tablist" aria-label="Project pages">
+              {projects.map((project, index) => (
+                <button
+                  type="button"
+                  role="tab"
+                  data-project-dot={index}
+                  aria-label={`${project.title} (${index + 1}/${projects.length})`}
+                  aria-selected={index === 0 ? 'true' : 'false'}
+                ></button>
+              ))}
+            </div>
+            <span class="project-carousel-rail" aria-hidden="true"><span data-project-rail-fill></span></span>
+          </div>
+          <button type="button" data-project-next aria-label="Next project">→</button>
+        </div>
+      </div>
+      <div
+        class="works-stack project-track"
+        data-project-track
+        tabindex="0"
+        aria-label="Current systems carousel"
+        data-en-aria="Current systems carousel"
+        data-zh-aria="在研系统滑轨"
+      >
+        {projects.map((project, index) => <ProjectCard project={project} index={index} />)}
+      </div>
+    </section>
+
+    <section class="research-section section section--fullbleed" id="research">
+      <div class="section-heading reveal-on-scroll">
+        <div>
+          <p class="section-eyebrow" data-en="Research" data-zh="研究">Research</p>
+          <h2 class="editorial-title" data-en="Selected publications" data-zh="代表论文">Selected publications</h2>
+        </div>
+      </div>
+      <div class="research-list">
+        {publications.map((publication, index) => <PublicationCard publication={publication} index={index} />)}
+      </div>
+    </section>
+
+    <section class="writing-section section section-shell" id="writing">
+      <div class="section-heading reveal-on-scroll">
+        <div>
+          <p class="section-eyebrow" data-en="Writing" data-zh="写作">Writing</p>
+          <h2 class="editorial-title" data-en="Notes from the work" data-zh="工作中的思考与笔记">Notes from the work</h2>
+        </div>
+      </div>
+
+      <div class="writing-nav reveal-on-scroll">
+        <a class="btn btn--secondary" href="/blog/" data-en="Blog" data-zh="博客">Blog</a>
+        <a class="btn btn--secondary" href="/notes/" data-en="Learning Notes" data-zh="学习笔记">Learning Notes</a>
+        <a class="btn btn--secondary" href="/archive/" data-en="Archive" data-zh="全部归档">Archive</a>
+      </div>
+
+      <div class="writing-columns">
+        <div>
+          <div class="column-heading"><h3 data-en="Blog" data-zh="博客">Blog</h3></div>
+          <div class="writing-list">{blogs.map((entry) => <ContentPreview entry={entry} kind="blog" />)}</div>
+        </div>
+        <div>
+          <div class="column-heading"><h3 data-en="Notes" data-zh="笔记">Notes</h3></div>
+          <div class="writing-list">{notes.map((entry) => <ContentPreview entry={entry} kind="notes" />)}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="background-section section section--fullbleed" id="experience">
+      <div class="background-grid">
+        <div class="background-column reveal-on-scroll">
+          <div class="background-heading">
+            <h2 class="background-title" data-en="Internship Experience" data-zh="实习经历">Internship Experience</h2>
+          </div>
+          <div class="background-list">
+            <article class="background-item">
+              <time>2026.03 — 2026.08</time>
+              <div>
+                <h3 data-en="LLM Application Intern" data-zh="LLM 应用实习生">LLM Application Intern</h3>
+                <p data-en="BioMap · Beijing, China" data-zh="百图生科 · 北京">BioMap · Beijing, China</p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="background-column reveal-on-scroll">
+          <div class="background-heading">
+            <h2 class="background-title" data-en="Education" data-zh="教育经历">Education</h2>
+          </div>
+          <div class="background-list">
+            <article class="background-item">
+              <time>2024.09 — 2027.06</time>
+              <div>
+                <h3 data-en="M.Eng. Computer Technology" data-zh="计算机技术 硕士">M.Eng. Computer Technology</h3>
+                <p data-en="Capital Normal University · Beijing" data-zh="首都师范大学 · 北京">Capital Normal University · Beijing</p>
+              </div>
+            </article>
+            <article class="background-item">
+              <time>2020.09 — 2024.06</time>
+              <div>
+                <h3 data-en="B.Eng. Computer Science & Technology" data-zh="计算机科学与技术 学士">B.Eng. Computer Science &amp; Technology</h3>
+                <p data-en="Fuyang Normal University Info Eng College · Anhui" data-zh="阜阳师范大学信息工程学院 · 安徽">Fuyang Normal University Info Eng College · Anhui</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-section contact-section--compact section-shell" id="contact">
+      <div class="platform-row reveal-on-scroll" aria-label="Contact links">
+        <a href="mailto:wxcurry223@gmail.com">wxcurry223@gmail.com</a>
+        <a href="https://github.com/ByteTitan-star" target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a href="https://leetcode.cn/u/serene-i3oseese/" target="_blank" rel="noreferrer">LeetCode ↗</a>
+        <a href="https://blog.csdn.net/m0_66289667" target="_blank" rel="noreferrer">CSDN ↗</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer editorial-footer">
+    <div class="footer-identity">
+      <strong>ByteTitan / Xin Wang</strong>
+      <span data-en="AI security · LLM systems" data-zh="AI 安全 · LLM 系统">AI security · LLM systems</span>
+    </div>
+    <div class="footer-meta">
+      <div class="visitor-wrap">
+        <span data-en="Visitors" data-zh="访问量">Visitors</span>
+        <img src="https://visitor-badge.laobi.icu/badge?page_id=bytetitan-star.github.io" alt="Visitor Count" loading="lazy" />
+      </div>
+      <div><span data-en="Updated" data-zh="更新">Updated</span><time datetime={buildDateISO}>{buildDate}</time></div>
+    </div>
+  </footer>
+
+  <div class="media-lightbox" data-lightbox aria-hidden="true">
+    <button class="media-lightbox-backdrop" type="button" data-lightbox-close aria-label="Close image preview"></button>
+    <div class="media-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Image preview">
+      <button class="media-lightbox-close" type="button" data-lightbox-close aria-label="Close image preview">×</button>
+      <img data-lightbox-image src="" alt="" />
+    </div>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const menu = document.getElementById('mobile-menu');
+      const openButton = document.querySelector('.hamburger');
+      const closeButton = document.querySelector('.mobile-close');
+      const setMenu = (open) => {
+        if (!menu || !openButton) return;
+        menu.classList.toggle('is-open', open);
+        menu.setAttribute('aria-hidden', String(!open));
+        openButton.setAttribute('aria-expanded', String(open));
+        document.body.classList.toggle('menu-open', open);
+      };
+      openButton?.addEventListener('click', () => setMenu(true));
+      closeButton?.addEventListener('click', () => setMenu(false));
+      menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setMenu(false)));
+      window.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
+
+      const video = document.querySelector('.site-motion-bg');
+      if (video && window.matchMedia('(prefers-reduced-motion: reduce)').matches) video.pause();
+
+      const hero = document.querySelector('.hero');
+      const progress = document.querySelector('.scroll-progress');
+      const progressLabel = document.querySelector('.scroll-progress-label');
+      const progressDot = document.querySelector('.scroll-progress-dot');
+      const syncScrollUI = () => {
+        const y = window.scrollY || document.documentElement.scrollTop;
+        const heroHeight = hero?.getBoundingClientRect().height || 80;
+        document.body.classList.toggle('past-hero', y > heroHeight * .72);
+        const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+        const ratio = Math.min(1, Math.max(0, y / max));
+        progress?.style.setProperty('--scroll-progress', String(ratio));
+        if (progressDot) progressDot.style.top = `${ratio * 100}%`;
+        if (progressLabel) progressLabel.textContent = `${String(Math.round(ratio * 100)).padStart(2, '0')}%`;
+      };
+      syncScrollUI();
+      window.addEventListener('scroll', syncScrollUI, { passive: true });
+      window.addEventListener('resize', syncScrollUI);
+
+      const projectTrack = document.querySelector('[data-project-track]');
+      const projectCards = projectTrack ? Array.from(projectTrack.querySelectorAll('.work-card')) : [];
+      const projectPrev = document.querySelector('[data-project-prev]');
+      const projectNext = document.querySelector('[data-project-next]');
+      const projectCurrent = document.querySelector('[data-project-current]');
+      const projectRailFill = document.querySelector('[data-project-rail-fill]');
+      const projectDots = Array.from(document.querySelectorAll('[data-project-dot]'));
+      let projectIndex = 0;
+      let projectScrollFrame = 0;
+
+      const updateProjectControls = (index = projectIndex) => {
+        if (!projectCards.length) return;
+        const nextIndex = Math.min(Math.max(index, 0), projectCards.length - 1);
+        const changed = nextIndex !== projectIndex;
+        projectIndex = nextIndex;
+        if (projectCurrent) {
+          projectCurrent.textContent = String(projectIndex + 1);
+          if (changed) {
+            projectCurrent.classList.remove('is-ticking');
+            void projectCurrent.offsetWidth;
+            projectCurrent.classList.add('is-ticking');
+          }
+        }
+        if (projectRailFill) projectRailFill.style.width = `${((projectIndex + 1) / projectCards.length) * 100}%`;
+        if (projectPrev) projectPrev.disabled = projectIndex === 0;
+        if (projectNext) projectNext.disabled = projectIndex === projectCards.length - 1;
+        projectDots.forEach((dot, dotIndex) => {
+          const active = dotIndex === projectIndex;
+          dot.setAttribute('aria-selected', active ? 'true' : 'false');
+          dot.classList.toggle('is-active', active);
+        });
+        projectCards.forEach((card, cardIndex) => card.setAttribute('aria-current', cardIndex === projectIndex ? 'true' : 'false'));
+      };
+
+      const goToProject = (index, behavior = 'smooth') => {
+        if (!projectTrack || !projectCards.length) return;
+        const nextIndex = Math.min(Math.max(index, 0), projectCards.length - 1);
+        const card = projectCards[nextIndex];
+        projectTrack.scrollTo({ left: card.offsetLeft, behavior });
+        updateProjectControls(nextIndex);
+      };
+
+      if (projectTrack && projectCards.length) {
+        updateProjectControls(0);
+        projectPrev?.addEventListener('click', () => goToProject(projectIndex - 1));
+        projectNext?.addEventListener('click', () => goToProject(projectIndex + 1));
+        projectDots.forEach((dot) => {
+          dot.addEventListener('click', () => {
+            const target = Number(dot.getAttribute('data-project-dot'));
+            if (Number.isFinite(target)) goToProject(target);
+          });
+        });
+        projectTrack.addEventListener('keydown', (event) => {
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            goToProject(projectIndex - 1);
+          }
+          if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            goToProject(projectIndex + 1);
+          }
+        });
+        projectTrack.addEventListener('scroll', () => {
+          cancelAnimationFrame(projectScrollFrame);
+          projectScrollFrame = requestAnimationFrame(() => {
+            const nearest = projectCards.reduce((best, card, index) => {
+              const distance = Math.abs(card.offsetLeft - projectTrack.scrollLeft);
+              return distance < best.distance ? { index, distance } : best;
+            }, { index: 0, distance: Infinity });
+            updateProjectControls(nearest.index);
+          });
+        }, { passive: true });
+        window.addEventListener('resize', () => goToProject(projectIndex, 'auto'));
+      }
+
+      const lightbox = document.querySelector('[data-lightbox]');
+      const lightboxImage = document.querySelector('[data-lightbox-image]');
+      let lastTrigger = null;
+      const closeLightbox = () => {
+        if (!lightbox) return;
+        lightbox.classList.remove('is-open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('lightbox-open');
+        lastTrigger?.focus?.();
+      };
+      document.querySelectorAll('[data-lightbox-src]').forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+          if (!lightbox || !lightboxImage) return;
+          lastTrigger = trigger;
+          lightboxImage.src = trigger.getAttribute('data-lightbox-src') || '';
+          lightboxImage.alt = trigger.getAttribute('data-lightbox-alt') || '';
+          lightbox.classList.add('is-open');
+          lightbox.setAttribute('aria-hidden', 'false');
+          document.body.classList.add('lightbox-open');
+          lightbox.querySelector('.media-lightbox-close')?.focus();
+        });
+      });
+      document.querySelectorAll('[data-lightbox-close]').forEach((button) => button.addEventListener('click', closeLightbox));
+      window.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeLightbox(); });
+    })();
+  </script>
+</BaseLayout>
