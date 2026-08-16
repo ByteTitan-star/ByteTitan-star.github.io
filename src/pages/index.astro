@@ -109,7 +109,12 @@ const buildDateISO = builtAt.toISOString();
   <main class="light-site" id="main">
     <section class="intro-section section section-shell" id="about">
       <div class="intro-portrait reveal-on-scroll">
-        <img src="/figures/ProfilePicture.png" alt="Portrait of Xin Wang" loading="lazy" />
+        <img
+          src="/figures/ProfilePicture.webp"
+          alt="Portrait of Xin Wang"
+          fetchpriority="high"
+          decoding="async"
+        />
       </div>
       <div class="intro-copy reveal-on-scroll">
         <p class="section-eyebrow" data-en="About" data-zh="关于我">About</p>

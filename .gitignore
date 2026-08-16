@@ -3,3 +3,4 @@ dist/
 .astro/
 .DS_Store
 .superpowers/
+public/figures/_originals/
