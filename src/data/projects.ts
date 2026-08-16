@@ -18,7 +18,7 @@ export const projects: Project[] = [
     title: 'GameForge',
     kicker: 'AI-powered browser game studio',
     kickerZh: '浏览器 AI 游戏工作室',
-    image: '/figures/GameForge.webp',
+    image: '/figures/GameForge.png',
     imageAlt: 'GameForge System',
     source: 'https://github.com/ByteTitan-star/GameForge-Copilot',
     description:
@@ -33,7 +33,7 @@ export const projects: Project[] = [
     title: 'PaperDistiller',
     kicker: 'Multi-agent research workspace',
     kickerZh: '多智能体科研工作台',
-    image: '/figures/paperDistriller.webp',
+    image: '/figures/paperDistriller.png',
     imageAlt: 'PaperDistiller System',
     source: 'https://github.com/ByteTitan-star/Agent_PaperDistiller',
     description:
@@ -48,7 +48,7 @@ export const projects: Project[] = [
     title: 'SoulMate',
     kicker: 'Personalized AI companion platform',
     kickerZh: '个性化 AI 伴侣平台',
-    image: '/figures/SoulMate.webp',
+    image: '/figures/SoulMate.png',
     imageAlt: 'SoulMate Application',
     source: 'https://github.com/ByteTitan-star/Agent_SoulMate',
     description:

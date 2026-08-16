@@ -28,13 +28,25 @@ const buildDate = new Intl.DateTimeFormat('en-CA', {
 const buildDateISO = builtAt.toISOString();
 ---
 <BaseLayout bodyClass="home-page">
+  <Fragment slot="head">
+    <link
+      rel="preload"
+      as="video"
+      href="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260622_204103_f607742e-09da-4cf5-bb06-4e67b0a531de.mp4"
+      type="video/mp4"
+      fetchpriority="high"
+    />
+  </Fragment>
   <a class="skip-link" href="#main" data-en="Skip to content" data-zh="跳到正文">Skip to content</a>
 
   <video
     class="site-motion-bg"
+    autoplay
     muted
+    loop
     playsinline
-    preload="metadata"
+    preload="auto"
+    fetchpriority="high"
     aria-hidden="true"
   >
     <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260622_204103_f607742e-09da-4cf5-bb06-4e67b0a531de.mp4" type="video/mp4" />
@@ -97,14 +109,7 @@ const buildDateISO = builtAt.toISOString();
   <main class="light-site" id="main">
     <section class="intro-section section section-shell" id="about">
       <div class="intro-portrait reveal-on-scroll">
-        <img
-          src="/figures/ProfilePicture.webp"
-          alt="Portrait of Xin Wang"
-          width="867"
-          height="1026"
-          loading="lazy"
-          decoding="async"
-        />
+        <img src="/figures/ProfilePicture.png" alt="Portrait of Xin Wang" loading="lazy" />
       </div>
       <div class="intro-copy reveal-on-scroll">
         <p class="section-eyebrow" data-en="About" data-zh="关于我">About</p>
@@ -307,22 +312,20 @@ const buildDateISO = builtAt.toISOString();
       window.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
 
       const video = document.querySelector('.site-motion-bg');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (video) {
-        const freezeFrame = () => {
-          try {
-            video.pause();
-            if (video.readyState >= 2 && Number.isFinite(video.duration) && video.duration > 0) {
-              video.currentTime = Math.min(0.12, video.duration * 0.02);
-            }
-          } catch (_) {}
+        const markVideoReady = () => {
           video.classList.add('is-ready');
+          if (!reducedMotion) video.play?.().catch(() => {});
         };
-        video.removeAttribute('autoplay');
-        video.pause?.();
-        if (video.readyState >= 2) freezeFrame();
-        else {
-          video.addEventListener('loadeddata', freezeFrame, { once: true });
-          video.addEventListener('loadedmetadata', freezeFrame, { once: true });
+        if (reducedMotion) {
+          video.pause();
+          video.classList.add('is-ready');
+        } else if (video.readyState >= 2) {
+          markVideoReady();
+        } else {
+          video.addEventListener('loadeddata', markVideoReady, { once: true });
+          video.addEventListener('canplay', markVideoReady, { once: true });
         }
       }
       const hero = document.querySelector('.hero');

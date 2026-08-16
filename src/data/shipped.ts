@@ -53,7 +53,7 @@ export const shippedProjects: ShippedProject[] = [
     title: 'BioMap OS',
     kicker: 'Life-science R&D OS',
     kickerZh: '生命科学研发操作系统',
-    image: '/figures/BioMap-os.webp',
+    image: '/figures/BioMap-os.png',
     imageAlt: 'BioMap OS interface',
     href: 'https://stage.biomap.com/',
     description:
@@ -89,7 +89,7 @@ export const shippedProjects: ShippedProject[] = [
     title: 'GnoSight',
     kicker: 'Target assessment agent',
     kickerZh: '靶点评估 Agent',
-    image: '/figures/gnosight.webp',
+    image: '/figures/gnosight.png',
     imageAlt: 'GnoSight target assessment agent',
     href: 'https://hidiamondbio.biomap.com/',
     description:

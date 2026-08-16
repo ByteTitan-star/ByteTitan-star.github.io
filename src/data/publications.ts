@@ -30,7 +30,7 @@ export const publications: Publication[] = [
     category: 'Time Series · Forecasting',
     categoryZh: '时间序列 · 预测',
     tags: ['Gaussian Prior', 'Decomposition', 'Attention', 'Forecasting'],
-    image: '/figures/agpdnet.webp',
+    image: '/figures/agpdnet.png',
     imageAlt: 'AGPD-Net overview',
     description:
       'AGPD-Net uses an adaptive Gaussian-prior decomposition module and dual-path attention to model non-stationary trends, multi-scale variation, intra-series evolution, and inter-variable dependencies for long-term forecasting. The decomposition separates complex temporal patterns into manageable components, while complementary attention paths preserve within-series dynamics and cross-variable relationships for richer stable long-horizon representations.',
@@ -53,7 +53,7 @@ export const publications: Publication[] = [
     category: 'AI Security · Backdoor Attack',
     categoryZh: 'AI 安全 · 后门攻击',
     tags: ['Clean-label', 'Backdoor', 'Poisoning', 'Model Security'],
-    image: '/figures/2026IJCNN-pipeline.webp',
+    image: '/figures/2026IJCNN-pipeline.png',
     imageAlt: 'IJCNN 2026 pipeline',
     description:
       'We propose two training-free, auxiliary-data-free sample selection metrics, DDM and PRM, to identify high-risk poisoning samples and strengthen clean-label backdoor attacks across datasets and architectures. Rather than treating candidates equally, the method prioritizes samples with poisoning potential before attack construction, making selection more targeted without extra training or external data.',
