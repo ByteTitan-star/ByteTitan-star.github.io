@@ -2330,15 +2330,21 @@ body.lightbox-open { overflow: hidden; }
   align-items: stretch;
 }
 
-/* Identical scaffold: type → title → desc → KPI band → text link */
+/* Identical scaffold: type → title → desc → KPI band → text link.
+   Must reset legacy .work-content 3-column grid (54px | 1fr | 48px),
+   otherwise copy/link collapse into narrow columns and wrap vertically. */
 .shipped-card .work-content {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0;
-  padding: 22px 22px 22px;
+  padding: 22px;
+  grid-template-columns: none;
+  grid-template-rows: none;
 }
 .shipped-card .work-copy {
   min-height: 132px;
+  flex: 0 0 auto;
 }
 .shipped-card .work-copy > p {
   margin-top: 12px;
@@ -2351,6 +2357,7 @@ body.lightbox-open { overflow: hidden; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
+  flex: 0 0 auto;
   height: 118px;
   margin-top: 18px;
   padding: 16px 0;
@@ -2401,7 +2408,7 @@ body.lightbox-open { overflow: hidden; }
 }
 .shipped-link {
   margin-top: 18px;
-  justify-self: start;
+  align-self: flex-start;
   font-size: 14px;
   font-weight: 650;
   color: var(--ink);
