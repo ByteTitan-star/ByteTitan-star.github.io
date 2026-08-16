@@ -2383,9 +2383,9 @@ body.lightbox-open { overflow: hidden; }
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
   flex: 0 0 auto;
-  height: 120px;
-  margin-top: 16px;
-  padding: 16px 0 0;
+  height: 92px;
+  margin-top: 12px;
+  padding: 10px 0 0;
   border-top: 1px solid rgba(16, 24, 40, .10);
   border-bottom: 0;
   overflow: hidden;
@@ -2393,7 +2393,7 @@ body.lightbox-open { overflow: hidden; }
 .shipped-kpi {
   position: relative;
   min-width: 0;
-  padding: 0 12px;
+  padding: 0 10px;
 }
 .shipped-kpi:first-child { padding-left: 0; }
 .shipped-kpi:last-child { padding-right: 0; }
@@ -2403,39 +2403,39 @@ body.lightbox-open { overflow: hidden; }
   left: 0;
   top: 50%;
   width: 1px;
-  height: 58%;
+  height: 52%;
   transform: translateY(-50%);
   background: rgba(16, 24, 40, .09);
 }
 .shipped-kpi__value {
-  font-size: clamp(28px, 2.8vw, 32px);
+  font-size: clamp(24px, 2.4vw, 28px);
   font-weight: 700;
   letter-spacing: -.045em;
   line-height: 1;
   color: var(--ink);
 }
 .shipped-kpi__value--compact {
-  font-size: clamp(22px, 2.2vw, 26px);
+  font-size: clamp(18px, 1.9vw, 22px);
   font-weight: 650;
   letter-spacing: -.03em;
 }
 .shipped-kpi__label {
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: 5px;
+  font-size: 12px;
   font-weight: 550;
   letter-spacing: -.01em;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--ink);
 }
 .shipped-kpi__hint {
-  margin-top: 4px;
-  font-size: 11.5px;
+  margin-top: 2px;
+  font-size: 11px;
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.25;
   color: var(--muted);
 }
 .shipped-link {
-  margin-top: 18px;
+  margin-top: 14px;
   align-self: flex-start;
   font-size: 14px;
   font-weight: 650;
