@@ -57,9 +57,9 @@ export const shippedProjects: ShippedProject[] = [
     imageAlt: 'BioMap OS interface',
     href: 'https://stage.biomap.com/',
     description:
-      'A unified R&D workbench that brings knowledge assistants, AgentOS, protein design, intelligent experiments, and data centers into one multi-agent operating surface.',
+      'A unified R&D workbench that brings knowledge assistants, AgentOS, protein design, intelligent experiments, and data centers into one multi-agent operating surface—shipping core capabilities while improving recall quality and sandbox reuse.',
     descriptionZh:
-      '统一知识助手、AgentOS、蛋白设计、智能实验与数据中心，把多 Agent 能力收敛到同一研发工作台。',
+      '统一知识助手、AgentOS、蛋白设计、智能实验与数据中心，把多 Agent 能力收敛到同一研发工作台，并持续优化召回效果与沙箱复用效率。',
     kpis: [
       {
         value: '3',
@@ -93,9 +93,9 @@ export const shippedProjects: ShippedProject[] = [
     imageAlt: 'GnoSight target assessment agent',
     href: 'https://hidiamondbio.biomap.com/',
     description:
-      'An online agent for target-value assessment that connects target biology, disease association, clinical evidence, and literature into an experiential evaluation entry point.',
+      'An online agent for target-value assessment that connects target biology, disease association, clinical evidence, and literature into an experiential evaluation entry—with end-to-end tracing and lower inference cost.',
     descriptionZh:
-      '面向靶点价值评估的线上 Agent：串联靶点生物学、疾病关联、临床与文献证据，形成可体验的评估入口。',
+      '面向靶点价值评估的线上 Agent：串联靶点生物学、疾病关联、临床与文献证据，形成可体验的评估入口，并支持端到端追踪与推理成本优化。',
     kpis: [
       {
         value: '4',
