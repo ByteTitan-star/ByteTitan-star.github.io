@@ -4,12 +4,12 @@
     <span class="music-icon" data-music-icon aria-hidden="true">▶</span>
     <span class="music-meta">
       <strong data-music-title data-en="Background music" data-zh="背景音乐">Background music</strong>
-      <small data-music-status data-en="Loading playlist…" data-zh="正在读取歌单…">Loading playlist…</small>
+      <small data-music-status data-en="Tap to load music" data-zh="点击加载音乐">Tap to load music</small>
     </span>
   </button>
   <div class="music-controls">
-    <select data-music-playlist aria-label="Playlist" title="Playlist"></select>
-    <button type="button" data-music-next aria-label="Next track" title="Next track">→</button>
+    <select data-music-playlist aria-label="Playlist" title="Playlist" disabled></select>
+    <button type="button" data-music-next aria-label="Next track" title="Next track" disabled>→</button>
     <label class="music-volume" title="Volume">
       <span aria-hidden="true">◔</span>
       <input data-music-volume type="range" min="0" max="1" step="0.01" value="0.30" aria-label="Background music volume" />
@@ -35,8 +35,9 @@
     let playlists = [];
     let playlistIndex = 0;
     let trackIndex = 0;
-    let attemptedAutoplay = false;
     let shouldPlay = false;
+    let booted = false;
+    let booting = false;
     const STORAGE_KEY = 'bytetitan-music-state-v2';
 
     const copy = (en, zh) => lang() === 'zh' ? zh : en;
@@ -76,7 +77,9 @@
       icon.textContent = playing ? 'Ⅱ' : '▶';
       toggle.setAttribute('aria-label', playing ? copy('Pause background music', '暂停背景音乐') : copy('Play background music', '播放背景音乐'));
       title.textContent = track?.title || copy('Background music', '背景音乐');
-      if (!currentList().length) {
+      if (!booted) {
+        status.textContent = copy('Tap to load music', '点击加载音乐');
+      } else if (!currentList().length) {
         status.textContent = copy('Add tracks in /public/audio/tracks', '请把音乐文件放入 /public/audio/tracks');
       } else if (playing) {
         status.textContent = `${playlists[playlistIndex]?.name || copy('Playlist', '歌单')} · ${trackIndex + 1}/${currentList().length}`;
@@ -132,9 +135,14 @@
         select.appendChild(option);
       });
       select.value = String(playlistIndex);
+      select.disabled = playlists.length === 0;
+      next.disabled = playlists.length === 0;
     };
 
-    const boot = async () => {
+    const boot = async ({ autoplay = false } = {}) => {
+      if (booted || booting) return;
+      booting = true;
+      status.textContent = copy('Loading playlist…', '正在读取歌单…');
       try {
         const response = await fetch('/audio/playlist.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('playlist missing');
@@ -142,7 +150,6 @@
         playlists = (config.playlists || []).filter((item) => Array.isArray(item.tracks));
         audio.volume = Math.max(0, Math.min(1, Number(config.defaultVolume ?? .30)));
         volume.value = String(audio.volume);
-        shouldPlay = config.autoplay !== false;
 
         try {
           const savedV2Raw = localStorage.getItem(STORAGE_KEY);
@@ -150,36 +157,34 @@
           const saved = JSON.parse(savedV2Raw || legacyRaw || '{}');
           playlistIndex = Math.min(Math.max(Number(saved.playlistIndex) || 0, 0), Math.max(playlists.length - 1, 0));
           trackIndex = Math.min(Math.max(Number(saved.trackIndex) || 0, 0), Math.max((playlists[playlistIndex]?.tracks?.length || 1) - 1, 0));
-
-          // v2 intentionally resets the old default-volume cache once, while preserving
-          // an explicit volume choice made after this revision.
           if (savedV2Raw && typeof saved.volume === 'number') {
             audio.volume = Math.max(0, Math.min(1, saved.volume));
             volume.value = String(audio.volume);
           }
-
-          if (typeof saved.shouldPlay === 'boolean') {
-            shouldPlay = saved.shouldPlay;
-          }
         } catch (_) {}
 
         populatePlaylists();
-        loadTrack(false);
-        if (shouldPlay && currentTrack()) {
-          attemptedAutoplay = true;
-          await play();
-        }
+        booted = true;
+        loadTrack(autoplay);
       } catch (_) {
         playlists = [];
         updateUI();
+      } finally {
+        booting = false;
       }
     };
 
     toggle.addEventListener('click', async () => {
+      if (!booted) {
+        shouldPlay = true;
+        await boot({ autoplay: true });
+        return;
+      }
       if (audio.paused) {
         shouldPlay = true;
         saveState();
-        await play();
+        if (!audio.src) loadTrack(true);
+        else await play();
       } else {
         shouldPlay = false;
         audio.pause();
@@ -187,15 +192,26 @@
         updateUI();
       }
     });
-    next.addEventListener('click', nextTrack);
+    next.addEventListener('click', async () => {
+      if (!booted) {
+        shouldPlay = true;
+        await boot({ autoplay: true });
+        return;
+      }
+      nextTrack();
+    });
     select.addEventListener('change', () => {
+      if (!booted) return;
       playlistIndex = Number(select.value) || 0;
       trackIndex = 0;
       loadTrack(shouldPlay);
     });
+    select.addEventListener('focus', () => {
+      if (!booted) boot({ autoplay: false });
+    });
     volume.addEventListener('input', () => {
       audio.volume = Number(volume.value);
-      saveState();
+      if (booted) saveState();
     });
     audio.addEventListener('play', updateUI);
     audio.addEventListener('pause', updateUI);
@@ -204,25 +220,14 @@
       status.textContent = copy('Track unavailable · check playlist.json', '音频不可用 · 请检查 playlist.json');
     });
 
-    const unlock = () => {
-      if (attemptedAutoplay && shouldPlay && audio.paused && currentTrack()) play();
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('keydown', unlock);
-    };
-    window.addEventListener('pointerdown', unlock, { once: true });
-    window.addEventListener('keydown', unlock, { once: true });
     window.addEventListener('storage', (event) => {
-      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      if (event.key !== STORAGE_KEY || !event.newValue || !booted) return;
       try {
         const saved = JSON.parse(event.newValue);
-
         if (typeof saved.volume === 'number') {
           audio.volume = Math.max(0, Math.min(1, saved.volume));
           volume.value = String(audio.volume);
         }
-
-        // Pause is propagated across open tabs/windows.
-        // Play is intentionally NOT propagated, to avoid two tabs playing at once.
         if (saved.shouldPlay === false) {
           shouldPlay = false;
           audio.pause();
@@ -244,21 +249,10 @@
       root.style.setProperty('--footer-clearance', `${Math.ceil(visibleFooter)}px`);
     };
 
-    const deferMusicBoot = (fn) => {
-      // Keep first paint free for the hero video, but don't wait on a full canplay
-      // (that used to delay a 16MB+ FLAC fetch by several seconds).
-      const start = () => window.setTimeout(fn, 700);
-      if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(start, { timeout: 1200 });
-      } else {
-        start();
-      }
-    };
-
     window.addEventListener('scroll', syncFooterClearance, { passive: true });
     window.addEventListener('resize', syncFooterClearance);
     window.addEventListener('site-language-change', updateUI);
     syncFooterClearance();
-    deferMusicBoot(boot);
+    updateUI();
   })();
 </script>

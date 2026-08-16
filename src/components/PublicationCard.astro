@@ -1,7 +1,9 @@
 ---
 import type { Publication } from '../data/publications';
+import { figureMeta } from '../data/figureMeta';
 const { publication, index = 0 } = Astro.props as { publication: Publication; index?: number };
 const motion = index % 2 === 0 ? 'scale-fade' : 'tilt-slide';
+const size = figureMeta[publication.image];
 ---
 <article class="research-card reveal-on-scroll" data-motion={motion}>
   <div class="research-main">
@@ -47,7 +49,15 @@ const motion = index % 2 === 0 ? 'scale-fade' : 'tilt-slide';
     data-zh-aria="放大查看论文图片"
     aria-label="Enlarge publication figure"
   >
-    <img src={publication.image} alt={publication.imageAlt} loading="lazy" onerror="this.style.display='none'" />
+    <img
+      src={publication.image}
+      alt={publication.imageAlt}
+      width={size?.width}
+      height={size?.height}
+      loading="lazy"
+      decoding="async"
+      onerror="this.style.display='none'"
+    />
     <span class="media-zoom-hint" data-en="View detail ↗" data-zh="放大查看 ↗">View detail ↗</span>
   </button>
 </article>
