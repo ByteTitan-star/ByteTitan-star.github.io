@@ -2330,24 +2330,49 @@ body.lightbox-open { overflow: hidden; }
   align-items: stretch;
 }
 
-/* Identical scaffold: type → title → desc → KPI band → text link.
-   Must reset legacy .work-content 3-column grid (54px | 1fr | 48px),
-   otherwise copy/link collapse into narrow columns and wrap vertically. */
+/* type + title → image → desc → KPI → View Project
+   Reset legacy .work-content 3-column grid so content never collapses vertically. */
+.shipped-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+.shipped-card__head {
+  padding: 20px 22px 16px;
+}
+.shipped-card__head .work-kicker {
+  margin-bottom: 8px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.shipped-card__head h3 {
+  margin: 0;
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -.03em;
+}
+.shipped-card .work-visual {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
 .shipped-card .work-content {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  padding: 22px;
+  padding: 18px 22px 22px;
   grid-template-columns: none;
   grid-template-rows: none;
 }
-.shipped-card .work-copy {
-  min-height: 132px;
-  flex: 0 0 auto;
-}
-.shipped-card .work-copy > p {
-  margin-top: 12px;
+.shipped-card__desc {
+  margin: 0;
+  min-height: 4.8em;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -2358,27 +2383,29 @@ body.lightbox-open { overflow: hidden; }
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
   flex: 0 0 auto;
-  height: 118px;
-  margin-top: 18px;
-  padding: 16px 0;
-  border-top: 1px solid rgba(16, 24, 40, .12);
-  border-bottom: 1px solid rgba(16, 24, 40, .12);
+  height: 120px;
+  margin-top: 16px;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(16, 24, 40, .10);
+  border-bottom: 0;
+  overflow: hidden;
 }
 .shipped-kpi {
   position: relative;
   min-width: 0;
-  padding: 0 14px;
+  padding: 0 12px;
 }
-.shipped-kpi:first-child { padding-left: 2px; }
-.shipped-kpi:last-child { padding-right: 2px; }
+.shipped-kpi:first-child { padding-left: 0; }
+.shipped-kpi:last-child { padding-right: 0; }
 .shipped-kpi + .shipped-kpi::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 4px;
-  bottom: 4px;
+  top: 50%;
   width: 1px;
-  background: rgba(16, 24, 40, .10);
+  height: 58%;
+  transform: translateY(-50%);
+  background: rgba(16, 24, 40, .09);
 }
 .shipped-kpi__value {
   font-size: clamp(28px, 2.8vw, 32px);
@@ -2388,12 +2415,13 @@ body.lightbox-open { overflow: hidden; }
   color: var(--ink);
 }
 .shipped-kpi__value--compact {
-  font-size: clamp(20px, 2.1vw, 24px);
+  font-size: clamp(22px, 2.2vw, 26px);
+  font-weight: 650;
   letter-spacing: -.03em;
 }
 .shipped-kpi__label {
-  margin-top: 10px;
-  font-size: 13.5px;
+  margin-top: 8px;
+  font-size: 13px;
   font-weight: 550;
   letter-spacing: -.01em;
   line-height: 1.25;
@@ -2401,7 +2429,7 @@ body.lightbox-open { overflow: hidden; }
 }
 .shipped-kpi__hint {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   line-height: 1.3;
   color: var(--muted);
@@ -2443,7 +2471,7 @@ body.lightbox-open { overflow: hidden; }
     background: rgba(16, 24, 40, .08);
   }
   .shipped-grid { grid-template-columns: 1fr; }
-  .shipped-card .work-copy { min-height: 0; }
+  .shipped-card__desc { min-height: 0; }
   .shipped-kpis {
     height: auto;
     grid-template-columns: 1fr;
@@ -2453,9 +2481,9 @@ body.lightbox-open { overflow: hidden; }
     left: 0;
     right: 0;
     top: 0;
-    bottom: auto;
     width: auto;
     height: 1px;
+    transform: none;
   }
 }
 

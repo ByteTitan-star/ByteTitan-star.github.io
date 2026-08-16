@@ -4,6 +4,11 @@ const { project, index = 0 } = Astro.props as { project: ShippedProject; index?:
 const motion = index % 2 === 0 ? 'from-left' : 'from-right';
 ---
 <article class="work-card shipped-card reveal-on-scroll" data-motion={motion}>
+  <header class="shipped-card__head">
+    <div class="work-kicker" data-en={project.kicker} data-zh={project.kickerZh}>{project.kicker}</div>
+    <h3>{project.title}</h3>
+  </header>
+
   <button
     class="work-visual media-zoom-trigger"
     type="button"
@@ -21,35 +26,20 @@ const motion = index % 2 === 0 ? 'from-left' : 'from-right';
   </button>
 
   <div class="work-content">
-    <div class="work-copy">
-      <div class="work-kicker" data-en={project.kicker} data-zh={project.kickerZh}>{project.kicker}</div>
-      <h3>{project.title}</h3>
-      <p data-en={project.description} data-zh={project.descriptionZh}>{project.description}</p>
-    </div>
+    <p class="shipped-card__desc" data-en={project.description} data-zh={project.descriptionZh}>{project.description}</p>
 
     <div class="shipped-kpis" aria-label={`${project.title} outcomes`}>
       {project.kpis.map((kpi) => (
         <div class="shipped-kpi">
-          <div
-            class:list={['shipped-kpi__value', { 'shipped-kpi__value--compact': kpi.compactValue }]}
-            data-en={kpi.value}
-            data-zh={kpi.valueZh}
-          >{kpi.value}</div>
-          <div class="shipped-kpi__label" data-en={kpi.label} data-zh={kpi.labelZh}>{kpi.label}</div>
-          {kpi.hint && (
-            <div class="shipped-kpi__hint" data-en={kpi.hint} data-zh={kpi.hintZh || kpi.hint}>{kpi.hint}</div>
-          )}
+          <div class:list={['shipped-kpi__value', { 'shipped-kpi__value--compact': kpi.compactValue }]}>
+            {kpi.value}
+          </div>
+          <div class="shipped-kpi__label">{kpi.label}</div>
+          {kpi.hint && <div class="shipped-kpi__hint">{kpi.hint}</div>}
         </div>
       ))}
     </div>
 
-    <a
-      class="shipped-link"
-      href={project.href}
-      target="_blank"
-      rel="noreferrer"
-      data-en="Visit ↗"
-      data-zh="访问入口 ↗"
-    >Visit ↗</a>
+    <a class="shipped-link" href={project.href} target="_blank" rel="noreferrer">View Project ↗</a>
   </div>
 </article>
