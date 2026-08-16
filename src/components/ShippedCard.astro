@@ -31,11 +31,15 @@ const motion = index % 2 === 0 ? 'from-left' : 'from-right';
     <div class="shipped-kpis" aria-label={`${project.title} outcomes`}>
       {project.kpis.map((kpi) => (
         <div class="shipped-kpi">
-          <div class:list={['shipped-kpi__value', { 'shipped-kpi__value--compact': kpi.compactValue }]}>
-            {kpi.value}
-          </div>
-          <div class="shipped-kpi__label">{kpi.label}</div>
-          {kpi.hint && <div class="shipped-kpi__hint">{kpi.hint}</div>}
+          <div
+            class:list={['shipped-kpi__value', { 'shipped-kpi__value--compact': kpi.compactValue }]}
+            data-en={kpi.value}
+            data-zh={kpi.valueZh}
+          >{kpi.value}</div>
+          <div class="shipped-kpi__label" data-en={kpi.label} data-zh={kpi.labelZh}>{kpi.label}</div>
+          {kpi.hint && (
+            <div class="shipped-kpi__hint" data-en={kpi.hint} data-zh={kpi.hintZh || kpi.hint}>{kpi.hint}</div>
+          )}
         </div>
       ))}
     </div>

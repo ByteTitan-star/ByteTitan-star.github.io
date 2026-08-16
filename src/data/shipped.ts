@@ -7,8 +7,11 @@ export type ShippedMetric = {
 
 export type ShippedKpi = {
   value: string;
+  valueZh: string;
   label: string;
+  labelZh: string;
   hint?: string;
+  hintZh?: string;
   compactValue?: boolean;
 };
 
@@ -60,17 +63,25 @@ export const shippedProjects: ShippedProject[] = [
     kpis: [
       {
         value: '3',
+        valueZh: '3',
         label: 'Core Capabilities Shipped',
-        hint: 'GeneralQA · DeepResearch · MD2PDF'
+        labelZh: '已上线核心能力',
+        hint: 'GeneralQA · DeepResearch · MD2PDF',
+        hintZh: 'GeneralQA · DeepResearch · MD2PDF'
       },
       {
         value: '80%',
-        label: 'Sandbox Session Reuse'
+        valueZh: '80%',
+        label: 'Sandbox Session Reuse',
+        labelZh: '沙箱会话复用'
       },
       {
         value: '96%',
+        valueZh: '96%',
         label: 'Skill Recall@3',
-        hint: '62% → 96%'
+        labelZh: 'Skill Recall@3',
+        hint: '62% → 96%',
+        hintZh: '62% → 96%'
       }
     ]
   },
@@ -88,16 +99,23 @@ export const shippedProjects: ShippedProject[] = [
     kpis: [
       {
         value: '4',
-        label: 'Production Releases'
+        valueZh: '4',
+        label: 'Production Releases',
+        labelZh: '生产版本发布'
       },
       {
         value: '30% ↓',
-        label: 'Token Cost'
+        valueZh: '30% ↓',
+        label: 'Token Cost',
+        labelZh: 'Token 成本'
       },
       {
         value: 'End-to-End',
+        valueZh: '端到端',
         label: 'Traceability',
+        labelZh: '全链路可追踪',
         hint: 'Request → Tool → Report',
+        hintZh: '请求 → 工具 → 报告',
         compactValue: true
       }
     ]
