@@ -26,13 +26,28 @@ const motion = index % 2 === 0 ? 'from-left' : 'from-right';
       <h3>{project.title}</h3>
       <p data-en={project.description} data-zh={project.descriptionZh}>{project.description}</p>
     </div>
+
+    <div class="shipped-kpis" aria-label={`${project.title} outcomes`}>
+      {project.kpis.map((kpi) => (
+        <div class="shipped-kpi">
+          <div class:list={['shipped-kpi__value', { 'shipped-kpi__value--compact': kpi.compactValue }]}>
+            {kpi.value}
+          </div>
+          <div class="shipped-kpi__label" data-en={kpi.label} data-zh={kpi.labelZh}>{kpi.label}</div>
+          {kpi.hint && (
+            <div class="shipped-kpi__hint" data-en={kpi.hint} data-zh={kpi.hintZh || kpi.hint}>{kpi.hint}</div>
+          )}
+        </div>
+      ))}
+    </div>
+
     <a
-      class="btn btn--secondary project-link"
+      class="shipped-link"
       href={project.href}
       target="_blank"
       rel="noreferrer"
-      data-en="Visit ↗"
-      data-zh="访问入口 ↗"
-    >Visit ↗</a>
+      data-en="View Project ↗"
+      data-zh="查看项目 ↗"
+    >View Project ↗</a>
   </div>
 </article>
