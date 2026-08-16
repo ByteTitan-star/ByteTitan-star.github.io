@@ -1,7 +1,10 @@
 ---
 import type { Project } from '../data/projects';
+import { figureMeta } from '../data/figureMeta';
 const { project, index = 0 } = Astro.props as { project: Project; index?: number };
 const motion = index % 2 === 0 ? 'from-left' : 'from-right';
+const displaySrc = project.image.replace(/\.png$/i, '.webp');
+const size = figureMeta[displaySrc];
 ---
 <article class="work-card reveal-on-scroll" data-motion={motion}>
   <button
@@ -16,7 +19,15 @@ const motion = index % 2 === 0 ? 'from-left' : 'from-right';
     <div class="work-visual-fallback" aria-hidden="true">
       <div class="work-ghost-title">{project.title}</div>
     </div>
-    <img src={project.image} alt={project.imageAlt} loading="lazy" onerror="this.style.display='none'" />
+    <img
+      src={displaySrc}
+      alt={project.imageAlt}
+      width={size?.width}
+      height={size?.height}
+      loading="lazy"
+      decoding="async"
+      onerror="this.style.display='none'"
+    />
     <span class="media-zoom-hint" data-en="View detail ↗" data-zh="放大查看 ↗">View detail ↗</span>
   </button>
 
