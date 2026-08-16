@@ -4,9 +4,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import LanguageToggle from '../components/LanguageToggle.astro';
 import PublicationCard from '../components/PublicationCard.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import ShippedCard from '../components/ShippedCard.astro';
 import ContentPreview from '../components/ContentPreview.astro';
 import { publications } from '../data/publications';
 import { projects } from '../data/projects';
+import { shippedMetrics, shippedProjects } from '../data/shipped';
 
 const blogs = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -66,6 +68,7 @@ const buildDateISO = builtAt.toISOString();
         <a class="hero-brand" href="#top">Xin Wang</a>
 
         <nav class="desktop-nav" aria-label="Primary navigation">
+          <a href="#shipped" data-en="Shipped" data-zh="落地">Shipped</a>
           <a href="#work" data-en="Work" data-zh="项目">Work</a>
           <a href="#research" data-en="Research" data-zh="研究">Research</a>
           <a href="#writing" data-en="Writing" data-zh="写作">Writing</a>
@@ -93,6 +96,7 @@ const buildDateISO = builtAt.toISOString();
         <button class="mobile-close" type="button" aria-label="Close menu"><span></span><span></span></button>
       </div>
       <nav class="mobile-links" aria-label="Mobile navigation">
+        <a href="#shipped" style="--delay:120ms" data-en="Shipped" data-zh="落地">Shipped</a>
         <a href="#work" style="--delay:150ms" data-en="Work" data-zh="项目">Work</a>
         <a href="#research" style="--delay:230ms" data-en="Research" data-zh="研究">Research</a>
         <a href="#writing" style="--delay:310ms" data-en="Writing" data-zh="写作">Writing</a>
@@ -113,6 +117,28 @@ const buildDateISO = builtAt.toISOString();
         <p class="intro-lead" data-en="I am a Master's student in Computer Technology at Capital Normal University. My current work focuses on model security, especially clean-label backdoor attacks, alongside agentic LLM systems, retrieval, and research tooling." data-zh="现就读于首都师范大学计算机技术专业硕士。当前主要关注模型安全，尤其是干净标签后门攻击，同时持续实践智能体 LLM 系统、检索与科研工具。">
           I am a Master's student in Computer Technology at Capital Normal University. My current work focuses on model security, especially clean-label backdoor attacks, alongside agentic LLM systems, retrieval, and research tooling.
         </p>
+      </div>
+    </section>
+
+    <section class="shipped-section section section-shell" id="shipped" aria-label="Shipped at BioMap">
+      <div class="section-heading reveal-on-scroll">
+        <div>
+          <p class="section-eyebrow" data-en="Shipped" data-zh="落地项目">Shipped</p>
+          <h2 class="editorial-title" data-en="Shipped at BioMap" data-zh="落地于 BioMap">Shipped at BioMap</h2>
+        </div>
+      </div>
+
+      <div class="shipped-metrics reveal-on-scroll" aria-label="Platform scale">
+        {shippedMetrics.map((metric) => (
+          <div class="shipped-metric">
+            <span class="shipped-metric__value" data-en={metric.value} data-zh={metric.valueZh}>{metric.value}</span>
+            <span class="shipped-metric__label" data-en={metric.label} data-zh={metric.labelZh}>{metric.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div class="shipped-grid">
+        {shippedProjects.map((project, index) => <ShippedCard project={project} index={index} />)}
       </div>
     </section>
 

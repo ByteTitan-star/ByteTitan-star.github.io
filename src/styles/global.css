@@ -2274,3 +2274,82 @@ body.lightbox-open { overflow: hidden; }
   }
 }
 
+/* ============================================================
+   SHIPPED AT BIOMAP — compact metrics strip + product cards
+   ============================================================ */
+.shipped-section { padding-top: clamp(48px, 4vw, 66px); }
+.shipped-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  height: 94px;
+  margin: 0 0 clamp(22px, 2.4vw, 28px);
+  padding: 0 22px;
+  border: 1px solid rgba(16, 24, 40, .09);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .7);
+}
+.shipped-metric {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 0 18px;
+  white-space: nowrap;
+}
+.shipped-metric + .shipped-metric::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 44px;
+  transform: translateY(-50%);
+  background: rgba(16, 24, 40, .11);
+}
+.shipped-metric__value {
+  font-size: clamp(32px, 3.3vw, 38px);
+  font-weight: 700;
+  letter-spacing: -.045em;
+  line-height: 1;
+  color: var(--ink);
+}
+.shipped-metric__label {
+  font-size: 16px;
+  font-weight: 550;
+  letter-spacing: -.01em;
+  line-height: 1.15;
+  color: var(--ink-soft);
+}
+.shipped-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(20px, 2vw, 24px);
+}
+.shipped-card .work-copy > p { margin-top: 12px; }
+
+@media (max-width: 900px) {
+  .shipped-metrics {
+    height: auto;
+    grid-template-columns: 1fr;
+    padding: 6px 16px;
+  }
+  .shipped-metric {
+    justify-content: flex-start;
+    padding: 14px 4px;
+    white-space: normal;
+  }
+  .shipped-metric + .shipped-metric::before {
+    left: 0;
+    right: 0;
+    top: 0;
+    width: auto;
+    height: 1px;
+    transform: none;
+    background: rgba(16, 24, 40, .08);
+  }
+  .shipped-grid { grid-template-columns: 1fr; }
+}
+

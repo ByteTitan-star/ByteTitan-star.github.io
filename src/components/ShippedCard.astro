@@ -1,0 +1,38 @@
+---
+import type { ShippedProject } from '../data/shipped';
+const { project, index = 0 } = Astro.props as { project: ShippedProject; index?: number };
+const motion = index % 2 === 0 ? 'from-left' : 'from-right';
+---
+<article class="work-card shipped-card reveal-on-scroll" data-motion={motion}>
+  <button
+    class="work-visual media-zoom-trigger"
+    type="button"
+    data-lightbox-src={project.image}
+    data-lightbox-alt={project.imageAlt}
+    data-en-aria={`Enlarge ${project.title} product image`}
+    data-zh-aria={`放大查看 ${project.title} 产品图片`}
+    aria-label={`Enlarge ${project.title} product image`}
+  >
+    <div class="work-visual-fallback" aria-hidden="true">
+      <div class="work-ghost-title">{project.title}</div>
+    </div>
+    <img src={project.image} alt={project.imageAlt} loading="lazy" onerror="this.style.display='none'" />
+    <span class="media-zoom-hint" data-en="View detail ↗" data-zh="放大查看 ↗">View detail ↗</span>
+  </button>
+
+  <div class="work-content">
+    <div class="work-copy">
+      <div class="work-kicker" data-en={project.kicker} data-zh={project.kickerZh}>{project.kicker}</div>
+      <h3>{project.title}</h3>
+      <p data-en={project.description} data-zh={project.descriptionZh}>{project.description}</p>
+    </div>
+    <a
+      class="btn btn--secondary project-link"
+      href={project.href}
+      target="_blank"
+      rel="noreferrer"
+      data-en="Visit ↗"
+      data-zh="访问入口 ↗"
+    >Visit ↗</a>
+  </div>
+</article>
