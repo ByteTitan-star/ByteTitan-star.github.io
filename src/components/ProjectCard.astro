@@ -40,6 +40,18 @@ const size = figureMeta[displaySrc];
         {project.stack.map((tech) => <span>{tech}</span>)}
       </div>
     </div>
-    <a class="btn btn--secondary project-link" href={project.source} target="_blank" rel="noreferrer" data-en="Source ↗" data-zh="源码 ↗">Source ↗</a>
+    <div class="project-actions">
+      {project.demo && (
+        <a
+          class="btn btn--primary project-link"
+          href={project.demo}
+          target="_blank"
+          rel="noreferrer"
+          data-en="Try live ↗"
+          data-zh="在线体验 ↗"
+        >Try live ↗</a>
+      )}
+      <a class="btn btn--secondary project-link" href={project.source} target="_blank" rel="noreferrer" data-en="Source ↗" data-zh="源码 ↗">Source ↗</a>
+    </div>
   </div>
 </article>

@@ -1283,7 +1283,14 @@ html[data-lang="zh"] .hero h1 { max-width: 760px; letter-spacing: -.04em; }
 .work-copy > p { margin-top: 12px; font-size: 16px; line-height: 1.68; }
 .tag-row { gap: 7px; margin-top: 16px; }
 .tag-row span, .tech-tag { min-height: 30px; padding: 5px 9px; font-size: 12px; }
-.project-link { align-self: flex-start; margin-top: auto; }
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: auto;
+}
+.project-link { align-self: flex-start; }
 .work-visual-fallback { padding: 24px; }
 .work-ghost-title { font-size: clamp(40px, 5vw, 70px); }
 

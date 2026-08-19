@@ -6,6 +6,7 @@ export type Project = {
   image: string;
   imageAlt: string;
   source: string;
+  demo?: string;
   description: string;
   descriptionZh: string;
   stack: string[];
@@ -21,6 +22,7 @@ export const projects: Project[] = [
     image: '/figures/GameForge.png',
     imageAlt: 'GameForge System',
     source: 'https://github.com/ByteTitan-star/GameForge-Copilot',
+    demo: 'http://62.234.65.18/agent',
     description:
       'An AI-assisted browser game studio that turns a natural-language gameplay idea into a playable browser game through multi-round dialogue, structured planning, human confirmation, and generation with live progress. It supports delivery targets such as React and other modern web frameworks, and creators can playtest in the browser, manage versions, meter tokens, and download or publish builds without writing code.',
     descriptionZh:
